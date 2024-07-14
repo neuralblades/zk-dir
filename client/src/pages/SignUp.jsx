@@ -46,7 +46,7 @@ export default function SignUp() {
             to='/'
             className='font-bold dark:text-white text-4xl'
           >
-            <span className='px-2 py-1 bg-gradient-to-r from-violet-900 via-purple-500 to-violet-900 rounded-lg text-white'>
+            <span className='px-2 py-1 bg-gradient-to-r from-green-500 via-green-400 to-green-500 rounded-lg text-white'>
               ZK-Bug
             </span>
             Directory
@@ -88,7 +88,7 @@ export default function SignUp() {
               />
             </div>
             <Button
-              gradientDuoTone='purpleToPink'
+              gradientMonochrome="success"
               type='submit'
               disabled={loading}
             >
