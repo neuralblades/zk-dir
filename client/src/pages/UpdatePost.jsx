@@ -107,6 +107,32 @@ export default function UpdatePost() {
       setPublishError('Something went wrong');
     }
   };
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, false] }],
+      ['bold', 'italic', 'underline','strike', 'blockquote'],
+      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+      ['link', 'image'],
+      [{ 'code-block': true }],
+      ['clean']
+    ],
+  };
+  const formats = [
+    'header',
+    'font',
+    'size',
+    'bold',
+    'italic',
+    'underline',
+    'strike',
+    'blockquote',
+    'list',
+    'bullet',
+    'indent',
+    'link',
+    'image',
+    'code-block',
+  ];
   return (
     <div className='p-3 max-w-3xl mx-auto min-h-screen'>
       <h1 className='text-center text-3xl my-7 font-semibold'>Update post</h1>
@@ -121,13 +147,13 @@ export default function UpdatePost() {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            value={formData.title}
+            value={formData.title || ""}
           />
           <Select
             onChange={(e) =>
               setFormData({ ...formData, category: e.target.value })
             }
-            value={formData.category}
+            value={formData.category || ""}
           >
             <option value='uncategorized'>Select a category</option>
             <option value='javascript'>JavaScript</option>
@@ -139,6 +165,7 @@ export default function UpdatePost() {
           <FileInput
             type='file'
             accept='image/*'
+            value={formData.file || ""}
             onChange={(e) => setFile(e.target.files[0])}
           />
           <Button
@@ -152,7 +179,7 @@ export default function UpdatePost() {
             {imageUploadProgress ? (
               <div className='w-16 h-16'>
                 <CircularProgressbar
-                  value={imageUploadProgress}
+                  value={imageUploadProgress || ""}
                   text={`${imageUploadProgress || 0}%`}
                 />
               </div>
@@ -171,8 +198,10 @@ export default function UpdatePost() {
         )}
         <ReactQuill
           theme='snow'
-          value={formData.content}
+          value={formData.content || ""}
           placeholder='Write something...'
+          modules={modules}
+          formats={formats}
           className='h-72 mb-12'
           required
           onChange={(value) => {
