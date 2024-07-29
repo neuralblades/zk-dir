@@ -1,3 +1,5 @@
+import hljs from 'highlight.js';
+import 'highlight.js/styles/monokai-sublime.css'; // Choose a style that fits your design
 import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -8,12 +10,19 @@ import {
   uploadBytesResumable,
 } from 'firebase/storage';
 import { app } from '../firebase';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useNavigate } from 'react-router-dom';
 
+
+
 export default function CreatePost() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.hljs = hljs;
+    }
+  }, []);
   const [file, setFile] = useState(null);
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(null);
@@ -41,6 +50,7 @@ export default function CreatePost() {
           setImageUploadProgress(progress.toFixed(0));
         },
         (error) => {
+          console.log(error);
           setImageUploadError('Image upload failed');
           setImageUploadProgress(null);
         },
@@ -82,16 +92,21 @@ export default function CreatePost() {
       setPublishError('Something went wrong');
     }
   };
-  const modules = {
+  
+  const modules = useMemo(() => ({
+    syntax: {
+      highlight: (text) => hljs.highlightAuto(text).value,
+    },
     toolbar: [
       [{ 'header': [1, 2, false] }],
-      ['bold', 'italic', 'underline','strike', 'blockquote'],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
       [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
       ['link', 'image'],
-      [{ 'code-block': true }],
+      ['code-block'],
       ['clean']
     ],
-  };
+  }), []);
+  
   const formats = [
     'header',
     'font',
