@@ -39,9 +39,37 @@ body {
 .dark .post-content a {
   color: red;
 }
-.post-content pre {
+/* .post-content pre {
   background-color: black;
   padding: 10px 20px;
   border-radius: 10px;
   color: whitesmoke;
+} */
+.ql-syntax {
+  background-color: #23241f;
+  color: #f8f8f2;
+  overflow: visible;
+  white-space: pre-wrap;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  padding: 5px 10px;
+  border-radius: 3px;
+}
+
+.post-content pre {
+  background-color: black;
+  border-radius: 3px;
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.post-content code {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #23241f;
 }
