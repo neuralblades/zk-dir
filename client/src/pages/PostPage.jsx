@@ -2,10 +2,13 @@ import { Button, Spinner } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CommentSection from '../components/CommentSection';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/monokai-sublime.css'; // or whichever style you're using
 
 export default function PostPage() {
   const { postSlug } = useParams();
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line no-unused-vars
   const [error, setError] = useState(false);
   const [post, setPost] = useState(null);
 
@@ -32,6 +35,34 @@ export default function PostPage() {
     };
     fetchPost();
   }, [postSlug]);
+
+  useEffect(() => {
+    if (post && post.content) {
+      // Wait for the content to be rendered
+      setTimeout(() => {
+        try {
+          // Transform the HTML if necessary
+          const contentElement = document.querySelector('.post-content');
+          if (contentElement) {
+            contentElement.querySelectorAll('pre.ql-syntax').forEach((preBlock) => {
+              const code = document.createElement('code');
+              code.innerHTML = preBlock.innerHTML;
+              preBlock.innerHTML = '';
+              preBlock.appendChild(code);
+            });
+
+            // Apply syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+              hljs.highlightElement(block);
+            });
+          }
+        } catch (e) {
+          console.error('Error applying syntax highlighting:', e);
+        }
+      }, 0);
+    }
+  }, [post]);
+   
 
   if (loading)
     return (
