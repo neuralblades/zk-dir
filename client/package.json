@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.6",
+    "client": "file:",
     "firebase": "^10.12.3",
     "flowbite-react": "^0.10.1",
     "highlight.js": "^11.10.0",

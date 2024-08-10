@@ -57,7 +57,7 @@ body {
 }
 
 .post-content pre {
-  background-color: black;
+  background-color: #11121a;
   border-radius: 3px;
   padding: 10px;
   overflow-x: auto;
@@ -71,5 +71,5 @@ body {
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #23241f;
+  background: #11121a;
 }
