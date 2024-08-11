@@ -1,3 +1,5 @@
+import hljs from 'highlight.js';
+import 'highlight.js/styles/monokai-sublime.css'; // Choose a style that fits your design
 import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -8,7 +10,7 @@ import {
   uploadBytesResumable,
 } from 'firebase/storage';
 import { app } from '../firebase';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -16,6 +18,11 @@ import { useSelector } from 'react-redux';
 
 
 export default function UpdatePost() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.hljs = hljs;
+    }
+  }, []);
   const [file, setFile] = useState(null);
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(null);
@@ -109,16 +116,21 @@ export default function UpdatePost() {
       setPublishError('Something went wrong');
     }
   };
-  const modules = {
+  
+  const modules = useMemo(() => ({
+    syntax: {
+      highlight: (text) => hljs.highlightAuto(text).value,
+    },
     toolbar: [
       [{ 'header': [1, 2, false] }],
       ['bold', 'italic', 'underline', 'strike', 'blockquote'],
       [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
       ['link', 'image'],
-      [{ 'code-block': true }],
+      ['code-block'],
       ['clean']
     ],
-  };
+  }), []);
+  
   const formats = [
     'header',
     'font',
