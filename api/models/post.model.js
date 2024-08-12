@@ -29,6 +29,7 @@ const postSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );
