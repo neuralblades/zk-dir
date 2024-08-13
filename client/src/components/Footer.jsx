@@ -3,18 +3,12 @@ import { Link } from 'react-router-dom';
 import { BsFacebook, BsInstagram, BsTwitter, BsGithub, BsDribbble } from 'react-icons/bs';
 export default function FooterCom() {
   return (
-    <Footer container className='border border-t-8 border-green-300'>
+    <Footer container className='border border-t-8 border-gray-300'>
       <div className='w-full max-w-7xl mx-auto'>
         <div className='grid w-full justify-between sm:flex md:grid-cols-1'>
-          <div className='mt-5'>
-            <Link
-              to='/'
-              className='self-center whitespace-nowrap text-lg sm:text-xl font-semibold dark:text-white'
-            >
-              <span className='px-2 py-1 bg-gradient-to-r from-green-500 via-green-400 to-green-500 rounded-lg text-white'>
-                ZK-Bug
-              </span>
-              Directory
+          <div className='mt-5 w-[70px]'>
+            <Link to='/'>
+              <img src="img/logoz.png" alt="#" />
             </Link>
           </div>
           <div className='grid grid-cols-2 gap-8 mt-4 sm:grid-cols-3 sm:gap-6'>

@@ -1,6 +1,6 @@
-import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Navbar, TextInput } from 'flowbite-react';
+import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Navbar, /*TextInput*/ } from 'flowbite-react';
 import { Link, useLocation } from 'react-router-dom';
-import { AiOutlineSearch } from 'react-icons/ai';
+// import { AiOutlineSearch } from 'react-icons/ai';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSelector,useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/theme/themeSlice'
@@ -30,16 +30,10 @@ export default function Header() {
 
   return (
     <Navbar className='border-b-2'>
-      <Link
-        to='/'
-        className='self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white'
-      >
-        <span className='px-2 py-1 bg-gradient-to-r from-green-500 via-green-400 to-green-500 rounded-lg text-white'>
-          ZK-Bug
-        </span>
-        Directory
+      <Link to='/' className='w-[50px]'>
+        <img src="img/logoz.png" alt="#" />
       </Link>
-      <form>
+      {/* <form>
         <TextInput
           type='text'
           placeholder='Search...'
@@ -49,7 +43,7 @@ export default function Header() {
       </form>
       <Button className='w-12 h-10 lg:hidden' color='gray' pill>
         <AiOutlineSearch />
-      </Button>
+      </Button> */}
       <div className='flex gap-2 md:order-2'>
         <Button
           className='w-12 h-10 hidden sm:inline'
