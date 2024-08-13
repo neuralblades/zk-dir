@@ -10,13 +10,11 @@ export default function Home() {
     category: '',
   });
 
-  console.log(sidebarData);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
   const location = useLocation();
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,79 +22,71 @@ export default function Home() {
     const searchTermFromUrl = urlParams.get('searchTerm');
     const sortFromUrl = urlParams.get('sort');
     const categoryFromUrl = urlParams.get('category');
+
     if (searchTermFromUrl || sortFromUrl || categoryFromUrl) {
-      setSidebarData({
-        ...sidebarData,
-        searchTerm: searchTermFromUrl,
-        sort: sortFromUrl,
-        category: categoryFromUrl,
-      });
+      setSidebarData(prevData => ({
+        ...prevData,
+        searchTerm: searchTermFromUrl || '',
+        sort: sortFromUrl || '',
+        category: categoryFromUrl || '',
+      }));
     }
 
     const fetchPosts = async () => {
       setLoading(true);
-      const searchQuery = urlParams.toString();
-      const res = await fetch(`/api/post/getposts?${searchQuery}`);
-      if (!res.ok) {
-        setLoading(false);
-        return;
-      }
-      if (res.ok) {
+      try {
+        const searchQuery = urlParams.toString();
+        const res = await fetch(`/api/post/getposts?${searchQuery}`);
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch posts');
+        }
+
         const data = await res.json();
         setPosts(data.posts);
+        setShowMore(data.posts.length === 9);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
         setLoading(false);
-        if (data.posts.length === 9) {
-          setShowMore(true);
-        } else {
-          setShowMore(false);
-        }
       }
     };
+
     fetchPosts();
   }, [location.search]);
 
   const handleChange = (e) => {
-    if (e.target.id === 'searchTerm') {
-      setSidebarData({ ...sidebarData, searchTerm: e.target.value });
-    }
-    if (e.target.id === 'sort') {
-      const order = e.target.value || '';
-      setSidebarData({ ...sidebarData, sort: order });
-    }
-    if (e.target.id === 'category') {
-      const category = e.target.value || '';
-      setSidebarData({ ...sidebarData, category });
-    }
+    const { id, value } = e.target;
+    setSidebarData(prevData => ({
+      ...prevData,
+      [id]: value,
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const urlParams = new URLSearchParams(location.search);
-    urlParams.set('searchTerm', sidebarData.searchTerm);
-    urlParams.set('sort', sidebarData.sort);
-    urlParams.set('category', sidebarData.category);
-    const searchQuery = urlParams.toString();
-    navigate(`/?${searchQuery}`);
+    const urlParams = new URLSearchParams(sidebarData);
+    navigate(`/?${urlParams.toString()}`);
   };
 
   const handleShowMore = async () => {
     const numberOfPosts = posts.length;
-    const startIndex = numberOfPosts;
     const urlParams = new URLSearchParams(location.search);
-    urlParams.set('startIndex', startIndex);
-    const searchQuery = urlParams.toString();
-    const res = await fetch(`/api/post/getposts?${searchQuery}`);
-    if (!res.ok) {
-      return;
-    }
-    if (res.ok) {
-      const data = await res.json();
-      setPosts([...posts, ...data.posts]);
-      if (data.posts.length === 9) {
-        setShowMore(true);
-      } else {
-        setShowMore(false);
+    urlParams.set('startIndex', numberOfPosts);
+
+    try {
+      const searchQuery = urlParams.toString();
+      const res = await fetch(`/api/post/getposts?${searchQuery}`);
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch more posts');
       }
+
+      const data = await res.json();
+      setPosts(prevPosts => [...prevPosts, ...data.posts]);
+      setShowMore(data.posts.length === 9);
+    } catch (error) {
+      console.error('Error fetching more posts:', error);
     }
   };
 
@@ -168,4 +158,3 @@ export default function Home() {
     </div>
   );
 }
-
