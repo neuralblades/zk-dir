@@ -18,7 +18,7 @@ export default function PostCard({ post }) {
   };
 
   return (
-    <div className='group relative w-full border border-teal-500 hover:border-2 h-[380px] overflow-hidden rounded-lg sm:w-[350px] transition-all'>
+    <div className='group relative w-full border border-gray-500 hover:border-2 h-[380px] overflow-hidden rounded-lg sm:w-[350px] transition-all'>
       <Link to={`/post/${post.slug}`}>
         <img
           src={post.image}
@@ -31,7 +31,7 @@ export default function PostCard({ post }) {
           <p className='text-lg font-semibold line-clamp-2 flex-grow'>{post.title}</p>
           <button 
             onClick={handleBookmark}
-            className='text-teal-500 hover:text-teal-600 focus:outline-none'
+            className='text-gray-500 hover:text-gray-600 focus:outline-none'
           >
             {isBookmarked ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
@@ -47,7 +47,7 @@ export default function PostCard({ post }) {
         <span className='italic text-sm'>{post.category}</span>
         <Link
           to={`/post/${post.slug}`}
-          className='z-10 group-hover:bottom-0 absolute bottom-[-200px] left-0 right-0 border border-teal-500 text-teal-500 hover:bg-teal-500 hover:text-white transition-all duration-300 text-center py-2 rounded-md !rounded-tl-none m-2'
+          className='z-10 group-hover:bottom-0 absolute bottom-[-200px] left-0 right-0 border border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white transition-all duration-300 text-center py-2 rounded-md !rounded-tl-none m-2'
         >
           Read article
         </Link>
