@@ -66,21 +66,6 @@ export const getposts = async (req, res, next) => {
       totalPosts,
       lastMonthPosts,
     });
-    
-    const postsWithBookmarkInfo = await Promise.all(posts.map(async (post) => {
-      const isBookmarked = req.user ? post.bookmarks.includes(req.user.id) : false;
-      return {
-        ...post.toObject(),
-        isBookmarked,
-        bookmarkCount: post.bookmarks.length,
-      };
-    }));
-
-    res.status(200).json({
-      posts: postsWithBookmarkInfo,
-      totalPosts,
-      lastMonthPosts,
-    });
   } catch (error) {
     next(error);
   }
@@ -116,59 +101,6 @@ export const updatepost = async (req, res, next) => {
       { new: true }
     );
     res.status(200).json(updatedPost);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const bookmarkPost = async (req, res, next) => {
-  try {
-    const post = await Post.findById(req.params.postId);
-    if (!post) {
-      return next(errorHandler(404, 'Post not found'));
-    }
-    
-    if (post.bookmarks.includes(req.user.id)) {
-      return next(errorHandler(400, 'You have already bookmarked this post'));
-    }
-    
-    post.bookmarks.push(req.user.id);
-    await post.save();
-    
-    res.status(200).json({ message: 'Post bookmarked successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const unbookmarkPost = async (req, res, next) => {
-  try {
-    const post = await Post.findById(req.params.postId);
-    if (!post) {
-      return next(errorHandler(404, 'Post not found'));
-    }
-    
-    if (!post.bookmarks.includes(req.user.id)) {
-      return next(errorHandler(400, 'You have not bookmarked this post'));
-    }
-    
-    post.bookmarks = post.bookmarks.filter(
-      (bookmark) => bookmark.toString() !== req.user.id
-    );
-    await post.save();
-    
-    res.status(200).json({ message: 'Post unbookmarked successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getBookmarkedPosts = async (req, res, next) => {
-  try {
-    const bookmarkedPosts = await Post.find({ bookmarks: req.user.id })
-      .sort({ updatedAt: -1 });
-    
-    res.status(200).json(bookmarkedPosts);
   } catch (error) {
     next(error);
   }
