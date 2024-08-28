@@ -1,17 +1,17 @@
-import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Navbar, /*TextInput*/ } from 'flowbite-react';
+import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Navbar} from 'flowbite-react';
 import { Link, useLocation } from 'react-router-dom';
-// import { AiOutlineSearch } from 'react-icons/ai';
-import { FaMoon, FaSun } from 'react-icons/fa';
+// import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSelector,useDispatch } from 'react-redux';
-import { toggleTheme } from '../redux/theme/themeSlice'
+// import { toggleTheme } from '../redux/theme/themeSlice'
 import { signoutSuccess } from '../redux/user/userSlice';
+import { FaBookmark } from 'react-icons/fa';
 
 
 export default function Header() {
   const path = useLocation().pathname;
   const dispatch = useDispatch();
   const {currentUser} = useSelector(state => state.user);
-  const { theme } =  useSelector((state =>state.theme));
+  // const { theme } =  useSelector((state =>state.theme));
   const handleSignout = async () => {
     try {
       const res = await fetch('/api/user/signout', {
@@ -28,31 +28,45 @@ export default function Header() {
     }
   };
 
+  const customTheme = {
+    root: {
+      base: "bg-gray-900 px-2 py-2.5 dark:border-gray-700 dark:bg-gray-950 sm:px-4",
+      rounded: {
+        on: "rounded",
+        off: ""
+      },
+      bordered: {
+        on: "border",
+        off: ""
+      },
+      inner: {
+        base: "mx-auto flex flex-wrap items-center justify-between",
+        fluid: {
+          on: "",
+          off: "container"
+        }
+      }
+    },
+    // ... you can customize other parts of the Navbar here
+  };
+
   return (
-    <Navbar className='border-b-2'>
+    <Navbar className='border-b-2' theme={customTheme}>
       <Link to='/' className='w-[50px]'>
         <img src="img/logoz.png" alt="#" />
       </Link>
-      {/* <form>
-        <TextInput
-          type='text'
-          placeholder='Search...'
-          rightIcon={AiOutlineSearch}
-          className='hidden lg:inline'
-        />
-      </form>
-      <Button className='w-12 h-10 lg:hidden' color='gray' pill>
-        <AiOutlineSearch />
-      </Button> */}
       <div className='flex gap-2 md:order-2'>
-        <Button
+        <Link to='/bookmarks' className="m-3">
+          <FaBookmark size={20} className={path === '/bookmarks'} />
+        </Link>
+        {/* <Button
           className='w-12 h-10 hidden sm:inline'
           color='gray'
           pill
           onClick={() => dispatch(toggleTheme())}
         >
           {theme === 'light' ? <FaSun /> : <FaMoon />}
-        </Button>
+        </Button> */}
         {currentUser ? (
           <Dropdown
             arrowIcon={false}
@@ -94,9 +108,6 @@ export default function Header() {
         </Navbar.Link>
         <Navbar.Link active={path === '/projects'} as={'div'}>
           <Link to='/projects'>Projects</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/bookmarks'} as={'div'}>
-          <Link to='/bookmarks'>Bookmarks</Link>
         </Navbar.Link>
       </Navbar.Collapse>
     </Navbar>
