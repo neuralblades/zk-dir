@@ -1,18 +1,14 @@
 import { Button, Spinner } from 'flowbite-react';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import CommentSection from '../components/CommentSection';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/monokai-sublime.css'; // or whichever style you're using
-import PostCard from '../components/PostCard';
+import 'highlight.js/styles/monokai-sublime.css';
 
-export default function PostPage() {
-  const { postSlug } = useParams();
+export default function PostPage({ postSlug }) {
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line no-unused-vars
   const [error, setError] = useState(false);
   const [post, setPost] = useState(null);
-  const [recentPosts, setRecentPosts] = useState(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -40,10 +36,8 @@ export default function PostPage() {
 
   useEffect(() => {
     if (post && post.content) {
-      // Wait for the content to be rendered
       setTimeout(() => {
         try {
-          // Transform the HTML if necessary
           const contentElement = document.querySelector('.post-content');
           if (contentElement) {
             contentElement.querySelectorAll('pre.ql-syntax').forEach((preBlock) => {
@@ -53,7 +47,6 @@ export default function PostPage() {
               preBlock.appendChild(code);
             });
 
-            // Apply syntax highlighting
             document.querySelectorAll('pre code').forEach((block) => {
               hljs.highlightElement(block);
             });
@@ -65,35 +58,28 @@ export default function PostPage() {
     }
   }, [post]);
 
-  useEffect(() => {
-    try {
-      const fetchRecentPosts = async () => {
-        const res = await fetch(`/api/post/getposts?limit=3`);
-        const data = await res.json();
-        if (res.ok) {
-          setRecentPosts(data.posts);
-        }
-      };
-      fetchRecentPosts();
-    } catch (error) {
-      console.log(error.message);
-    }
-  }, []);
-   
   if (loading)
     return (
-      <div className='flex justify-center items-center min-h-screen'>
+      <div className='flex justify-center items-center h-full'>
         <Spinner size='xl' />
       </div>
     );
+
+  if (error)
+    return (
+      <div className='flex justify-center items-center h-full'>
+        <p className='text-red-500'>Error loading post.</p>
+      </div>
+    );
+
   return (
-    <main className='p-3 flex flex-col max-w-6xl mx-auto min-h-screen'>
-      <h1 className='text-3xl mt-10 p-3 text-center font-serif max-w-2xl mx-auto lg:text-4xl'>
+    <main className='p-3 flex flex-col h-full overflow-y-auto'>
+      <h1 className='text-2xl mt-4 p-2 text-center font-serif'>
         {post && post.title}
       </h1>
       <Link
         to={`/search?category=${post && post.category}`}
-        className='self-center mt-5'
+        className='self-center mt-2'
       >
         <Button color='gray' pill size='xs'>
           {post && post.category}
@@ -102,27 +88,19 @@ export default function PostPage() {
       <img
         src={post && post.image}
         alt={post && post.title}
-        className='mt-10 p-3 lg:px-[200px] max-h-[600px] w-full object-cover'
+        className='mt-4 p-2 max-h-[300px] w-full object-cover'
       />
-      <div className='flex justify-between p-3 border-b border-slate-500 mx-auto w-full max-w-2xl text-xs'>
+      <div className='flex justify-between p-2 border-b border-slate-500 mx-auto w-full text-xs'>
         <span>{post && new Date(post.createdAt).toLocaleDateString()}</span>
         <span className='italic'>
           {post && (post.content.length / 1000).toFixed(0)} mins read
         </span>
       </div>
       <div
-        className='p-3 max-w-2xl mx-auto w-full post-content border-b border-slate-500'
+        className='p-2 w-full post-content border-b border-slate-500'
         dangerouslySetInnerHTML={{ __html: post && post.content }}
       ></div>
       <CommentSection postId={post._id} />
-
-      <div className='flex flex-col justify-center items-center mb-5'>
-        <h1 className='text-xl mt-5'>Recent articles</h1>
-        <div className='flex flex-wrap gap-5 mt-5 justify-center'>
-          {recentPosts &&
-            recentPosts.map((post) => <PostCard key={post._id} post={post} />)}
-        </div>
-      </div>
     </main>
   );
 }
