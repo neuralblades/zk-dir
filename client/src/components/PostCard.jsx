@@ -36,7 +36,7 @@ export default function PostCard({ post, onClick }) {
   }
 
   return (
-    <div className="border border-gray-700 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer" onClick={onClick}>
+    <div className="border border-gray-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer" onClick={onClick}>
       <div className='flex items-center gap-4 mb-2'>
         <Link to={`/post/${post.slug}`} className="flex-shrink-0">
           <img
