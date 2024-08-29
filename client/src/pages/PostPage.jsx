@@ -1,11 +1,12 @@
 import { Button, Spinner } from 'flowbite-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import CommentSection from '../components/CommentSection';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/monokai-sublime.css';
 
-export default function PostPage({ postSlug }) {
+export default function PostPage() {
+  const { postSlug } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [post, setPost] = useState(null);
@@ -73,7 +74,7 @@ export default function PostPage({ postSlug }) {
     );
 
   return (
-    <main className='p-3 flex flex-col h-full overflow-y-auto'>
+    <main className='p-3 flex flex-col max-w-6xl h-full mx-auto overflow-y-auto'>
       <h1 className='text-2xl mt-4 p-2 text-center font-serif'>
         {post && post.title}
       </h1>
