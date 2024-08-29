@@ -1,8 +1,6 @@
 import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Navbar} from 'flowbite-react';
 import { Link, useLocation } from 'react-router-dom';
-// import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSelector,useDispatch } from 'react-redux';
-// import { toggleTheme } from '../redux/theme/themeSlice'
 import { signoutSuccess } from '../redux/user/userSlice';
 import { FaBookmark } from 'react-icons/fa';
 
@@ -11,7 +9,6 @@ export default function Header() {
   const path = useLocation().pathname;
   const dispatch = useDispatch();
   const {currentUser} = useSelector(state => state.user);
-  // const { theme } =  useSelector((state =>state.theme));
   const handleSignout = async () => {
     try {
       const res = await fetch('/api/user/signout', {
@@ -30,7 +27,7 @@ export default function Header() {
 
   const customTheme = {
     root: {
-      base: "bg-gray-900 px-2 py-2.5 dark:border-gray-700 dark:bg-gray-950 sm:px-4",
+      base: "bg-black px-2 py-2.5 dark:border-gray-900 dark:bg-black sm:px-4",
       rounded: {
         on: "rounded",
         off: ""
@@ -52,21 +49,13 @@ export default function Header() {
 
   return (
     <Navbar className='border-b-2' theme={customTheme}>
-      <Link to='/' className='w-[50px]'>
-        <img src="img/logoz.png" alt="#" />
+      <Link to='/' className='w-[40px]'>
+        <img src="img/logozk.png" alt="#" />
       </Link>
       <div className='flex gap-2 md:order-2'>
         <Link to='/bookmarks' className="m-3">
           <FaBookmark size={20} className={path === '/bookmarks'} />
         </Link>
-        {/* <Button
-          className='w-12 h-10 hidden sm:inline'
-          color='gray'
-          pill
-          onClick={() => dispatch(toggleTheme())}
-        >
-          {theme === 'light' ? <FaSun /> : <FaMoon />}
-        </Button> */}
         {currentUser ? (
           <Dropdown
             arrowIcon={false}
