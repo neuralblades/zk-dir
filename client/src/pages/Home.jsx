@@ -1,4 +1,3 @@
-import { Button, Select, TextInput, Spinner } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PostCard from '../components/PostCard';
@@ -151,59 +150,73 @@ export default function Home() {
     setShowSidebar(!showSidebar);
   };
 
+  const handleBackToList = () => {
+    setSelectedPost(null);
+  };
+
   return (
-    <div className="mx-auto flex flex-col md:flex-row h-screen overflow-hidden bg-gray-900 text-gray-200">
+    <div className="mx-auto flex flex-col md:flex-row h-[87vh] overflow-hidden bg-black text-gray-200">
       {isMobileView && (
-        <Button onClick={toggleSidebar} className="m-4">
+        <button onClick={toggleSidebar} className="m-4">
           {showSidebar ? 'Hide Filters' : 'Show Filters'}
-        </Button>
+        </button>
       )}
       
       {/* Sidebar */}
-      <div className={`${isMobileView ? (showSidebar ? 'block' : 'hidden') : 'block'} w-full md:w-1/4 border border-gray-700 bg-gray-950 rounded-lg shadow-lg m-4 mr-0`}>
+      <div className={`${isMobileView ? (showSidebar ? 'block' : 'hidden') : 'block'} w-full md:w-1/4 border border-gray-900 bg-black shadow-lg m-4 mr-0`}>
         <div className="p-4">
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+        <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
             <div className='flex flex-col'>
-              <label className='font-semibold mb-1'>Search Term:</label>
-              <TextInput
+              <label htmlFor="searchTerm" className='font-semibold mb-1 text-gray-300'>Search Term:</label>
+              <input
+                type="text"
+                id="searchTerm"
                 placeholder='Search...'
-                id='searchTerm'
-                type='text'
                 value={sidebarData.searchTerm}
                 onChange={handleChange}
+                className="bg-black text-white border border-gray-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-gray-700"
               />
             </div>
             <div className='flex flex-col'>
-              <label className='font-semibold mb-1'>Sort:</label>
-              <Select onChange={handleChange} value={sidebarData.sort} id='sort'>
+              <label htmlFor="sort" className='font-semibold mb-1 text-gray-300'>Sort:</label>
+              <select 
+                id="sort"
+                value={sidebarData.sort}
+                onChange={handleChange}
+                className="bg-black text-white border border-gray-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-gray-700"
+              >
                 <option value=''>Default</option>
                 <option value='desc'>Latest</option>
                 <option value='asc'>Oldest</option>
-              </Select>
+              </select>
             </div>
             <div className='flex flex-col'>
-              <label className='font-semibold mb-1'>Category:</label>
-              <Select
-                onChange={handleChange}
+              <label htmlFor="category" className='font-semibold mb-1 text-gray-300'>Category:</label>
+              <select
+                id="category"
                 value={sidebarData.category}
-                id='category'
+                onChange={handleChange}
+                className="bg-black text-white border border-gray-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-gray-700"
               >
                 <option value=''>Default</option>
                 <option value='uncategorized'>Uncategorized</option>
                 <option value='reactjs'>React.js</option>
                 <option value='nextjs'>Next.js</option>
                 <option value='javascript'>JavaScript</option>
-              </Select>
+              </select>
             </div>
-            <Button type='submit' outline color="light">
+            <button
+              type="submit"
+              className="w-full px-4 py-2 bg-black text-white rounded hover:bg-gray-900 border border-gray-900 transition duration-300"
+            >
               Apply Filters
-            </Button>
+            </button>
           </form>
         </div>
       </div>
 
       {/* Posts List */}
-      <div className={`${selectedPost && isMobileView ? 'hidden' : 'block'} w-full md:w-1/4 border border-gray-700 bg-gray-950 rounded-lg shadow-lg m-4 mr-0 overflow-y-auto`}>
+      <div className={`${selectedPost && isMobileView ? 'hidden' : 'block'} w-full md:w-1/4 border border-gray-900 bg-black shadow-lg m-4 mr-0 overflow-y-auto`}>
         <div className="p-4">
           {!loading && posts.length === 0 && (
             <p className='text-xl text-gray-500'>No posts found.</p>
@@ -237,19 +250,27 @@ export default function Home() {
       </div>
 
       {/* Post Detail */}
-      <div className={`${!selectedPost && isMobileView ? 'hidden' : 'block'} w-full md:w-1/2 border border-gray-700 bg-gray-950 rounded-lg shadow-lg m-4 overflow-y-auto`}>
+      <div className={`${!selectedPost && isMobileView ? 'hidden' : 'block'} w-full md:w-1/2 border border-gray-900 bg-black shadow-lg m-4 overflow-y-auto`}>
         {loadingPost ? (
           <div className='flex justify-center items-center h-full'>
-            <Spinner size='xl' />
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
           </div>
         ) : selectedPost ? (
           <div className='p-3 flex flex-col h-full'>
+            {isMobileView && (
+            <button 
+              onClick={handleBackToList}
+              className="mb-4 px-4 py-2 bg-gray-700 text-white border border-white rounded hover:bg-gray-600 transition duration-300"
+            >
+              ← Back to List
+            </button>
+            )}
             <h1 className='text-2xl mt-4 p-2 text-center font-serif'>
               {selectedPost.title}
             </h1>
-            <Button color='gray' pill size='xs' className='self-center mt-2'>
+            <span className="self-center mt-2 px-3 py-1 bg-gray-700 text-white text-sm rounded-full">
               {selectedPost.category}
-            </Button>
+            </span>
             <img
               src={selectedPost.image}
               alt={selectedPost.title}
