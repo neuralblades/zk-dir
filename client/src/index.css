@@ -39,12 +39,7 @@ body {
 .dark .post-content a {
   color: red;
 }
-/* .post-content pre {
-  background-color: black;
-  padding: 10px 20px;
-  border-radius: 10px;
-  color: whitesmoke;
-} */
+
 .ql-syntax {
   background-color: #23241f;
   color: #f8f8f2;
@@ -57,7 +52,7 @@ body {
 }
 
 .post-content pre {
-  background-color: #11121a;
+  background-color: #111827;
   border-radius: 3px;
   padding: 10px;
   overflow-x: auto;
@@ -71,7 +66,7 @@ body {
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #11121a;
+  background: #111827;
 }
 
 /* Custom scrollbar styles */
@@ -90,4 +85,27 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
+}
+
+.select-custom-highlight {
+  --highlight-color: #10B981; /* Tailwind's green-500 */
+}
+
+.select-custom-highlight option:checked {
+  background-color: var(--highlight-color) !important;
+  color: white !important;
+}
+
+/* For Firefox */
+.select-custom-highlight option:hover,
+.select-custom-highlight option:focus {
+  background-color: var(--highlight-color) !important;
+  color: white !important;
+}
+
+/* For Chrome and other browsers */
+.select-custom-highlight:focus option:checked {
+  background: linear-gradient(0deg, var(--highlight-color) 0%, var(--highlight-color) 100%);
+  background-color: var(--highlight-color) !important;
+  color: white !important;
 }
