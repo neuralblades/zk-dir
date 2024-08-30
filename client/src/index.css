@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+
 body {
   height: 100vh;
+  /* font-family: 'Montserrat', sans-serif; */
 }
 
 .ql-editor {
@@ -58,16 +60,10 @@ body {
   overflow-x: auto;
 }
 
-.post-content code {
+/* .post-content code {
   font-family: 'Courier New', Courier, monospace;
-}
+} */
 
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #111827;
-}
 
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
@@ -87,25 +83,11 @@ body {
   background: #6b7280;
 }
 
-.select-custom-highlight {
-  --highlight-color: #10B981; /* Tailwind's green-500 */
-}
-
-.select-custom-highlight option:checked {
-  background-color: var(--highlight-color) !important;
-  color: white !important;
-}
-
-/* For Firefox */
-.select-custom-highlight option:hover,
-.select-custom-highlight option:focus {
-  background-color: var(--highlight-color) !important;
-  color: white !important;
-}
-
-/* For Chrome and other browsers */
-.select-custom-highlight:focus option:checked {
-  background: linear-gradient(0deg, var(--highlight-color) 0%, var(--highlight-color) 100%);
-  background-color: var(--highlight-color) !important;
-  color: white !important;
+/* Custom HLJS theme */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #111827;
+  color: #f8f8f2;
 }
