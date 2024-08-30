@@ -2,7 +2,7 @@ import { FaTwitter, FaGithub, FaLinkedin } from 'react-icons/fa';
 
 export default function FooterCom() {
   return (
-    <footer className="bg-black text-gray-400 text-xs py-2 px-4 flex justify-between items-center border-t border-gray-900">
+    <footer className="bg-black h-[4vh] text-gray-400 text-xs py-2 px-4 flex justify-between items-center border-t border-gray-900">
       <div>
         {new Date().getFullYear()} © ZKBD
       </div>
