@@ -38,8 +38,8 @@ export default function SignIn() {
     }
   };
   return (
-    <div className='min-h-screen mt-20'>
-      <div className='flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5'>
+    <div className='h-[89vh] bg-black'>
+      <div className='flex p-3 pt-20 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5'>
         {/* left */}
         <div className='flex-1 self-center hidden sm:block'>
           <Link to='/'>
