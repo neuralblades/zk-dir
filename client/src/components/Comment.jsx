@@ -1,15 +1,14 @@
-/* eslint-disable react/prop-types */
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { FaThumbsUp } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
-import { Button, Textarea } from 'flowbite-react';
 
 export default function Comment({ comment, onLike, onEdit, onDelete }) {
   const [user, setUser] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const { currentUser } = useSelector((state) => state.user);
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -49,8 +48,9 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
       console.log(error.message);
     }
   };
+
   return (
-    <div className='flex p-4 border-b dark:border-gray-600 text-sm'>
+    <div className='flex p-4 border-b dark:border-gray-900 text-sm'>
       <div className='flex-shrink-0 mr-3'>
         <img
           className='w-10 h-10 rounded-full bg-gray-200'
@@ -69,35 +69,33 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
         </div>
         {isEditing ? (
           <>
-            <Textarea
-              className='mb-2'
+            <textarea
+              className='w-full p-2 text-sm text-white bg-gray-900 rounded-lg border border-gray-800 focus:ring-gray-900 focus:border-violet-950 mb-2'
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
+              rows="3"
             />
             <div className='flex justify-end gap-2 text-xs'>
-              <Button
+              <button
                 type='button'
-                size='sm'
-                gradientDuoTone='purpleToBlue'
+                className='px-3 py-1 text-xs font-medium text-center text-white bg-gray-900 rounded-lg hover:bg-gray-700 focus:ring-4 focus:outline-none focus:ring-violet-950'
                 onClick={handleSave}
               >
                 Save
-              </Button>
-              <Button
+              </button>
+              <button
                 type='button'
-                size='sm'
-                gradientDuoTone='purpleToBlue'
-                outline
+                className='px-3 py-1 text-xs font-medium text-center text-white hover:text-white border border-violet-950 hover:bg-violet-950 focus:ring-4 focus:outline-none focus:ring-violet-950 rounded-lg'
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
-              </Button>
+              </button>
             </div>
           </>
         ) : (
           <>
             <p className='text-gray-500 pb-2'>{comment.content}</p>
-            <div className='flex items-center pt-2 text-xs border-t dark:border-gray-700 max-w-fit gap-2'>
+            <div className='flex items-center pt-2 text-xs  max-w-fit gap-2'>
               <button
                 type='button'
                 onClick={() => onLike(comment._id)}
