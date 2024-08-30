@@ -276,14 +276,14 @@ export default function Home() {
               alt={selectedPost.title}
               className='mt-4 p-2 max-h-[300px] w-full object-cover'
             />
-            <div className='flex justify-between p-2 border-b border-slate-500 mx-auto w-full text-xs'>
+            <div className='flex justify-between p-2 border-b border-gray-900 mx-auto w-full text-xs'>
               <span>{new Date(selectedPost.createdAt).toLocaleDateString()}</span>
               <span className='italic'>
                 {(selectedPost.content.length / 1000).toFixed(0)} mins read
               </span>
             </div>
             <div
-              className='p-2 w-full post-content border-b border-slate-500'
+              className='p-2 w-full post-content border-b border-gray-900'
               dangerouslySetInnerHTML={{ __html: selectedPost.content }}
             ></div>
             <CommentSection postId={selectedPost._id} />
