@@ -155,7 +155,7 @@ export default function Home() {
   };
 
   return (
-    <div className="mx-auto flex flex-col md:flex-row h-[87vh] overflow-hidden bg-black text-gray-200">
+    <div className="mx-auto flex flex-col md:flex-row h-[89vh] overflow-hidden bg-black text-gray-200">
       {isMobileView && (
         <button onClick={toggleSidebar} className="m-4">
           {showSidebar ? 'Hide Filters' : 'Show Filters'}
