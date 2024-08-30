@@ -27,7 +27,7 @@ export default function Header() {
 
   const customTheme = {
     root: {
-      base: "bg-black px-2 py-2.5 dark:border-gray-900 dark:bg-black sm:px-4",
+      base: "bg-black px-2 py-2.5 border-gray-900 sm:px-4",
       rounded: {
         on: "rounded",
         off: ""
@@ -48,11 +48,16 @@ export default function Header() {
   };
 
   return (
-    <Navbar className='border-b-2' theme={customTheme}>
+    <Navbar className='border-b-2 ' theme={customTheme}>
       <Link to='/' className='w-[40px]'>
         <img src="img/logozk.png" alt="#" />
       </Link>
       <div className='flex gap-2 md:order-2'>
+        <Link to='/create-post'>
+          <button className=' px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 border-2 border-gray-700 transition duration-300'>
+            New Post
+          </button>
+        </Link>
         <Link to='/bookmarks' className="m-3">
           <FaBookmark size={20} className={path === '/bookmarks'} />
         </Link>
