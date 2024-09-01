@@ -138,10 +138,10 @@ export default function CommentSection({ postId }) {
       {currentUser && (
         <form
           onSubmit={handleSubmit}
-          className='border border-gray-900 rounded-md p-3'
+          className='border border-zinc-900 rounded-md p-3'
         >
           <textarea
-            className='w-full bg-gray-900 text-white border-gray-800 rounded-md p-2 focus:ring-1 focus:ring-gray-950 focus:border-violet-950'
+            className='w-full bg-zinc-950 text-white border-zinc-900 rounded-md p-2 focus:ring-1 focus:ring-gray-950 focus:border-violet-950'
             placeholder='Add a comment...'
             rows='3'
             maxLength='200'
@@ -153,7 +153,7 @@ export default function CommentSection({ postId }) {
               {200 - comment.length} characters remaining
             </p>
             <button
-              className='px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-700 transition duration-300'
+              className='px-4 py-2 bg-zinc-950 text-white rounded-md border border-violet-950 hover:bg-zinc-900 transition duration-300'
               type='submit'
             >
               Submit
@@ -172,7 +172,7 @@ export default function CommentSection({ postId }) {
         <>
           <div className='text-sm my-5 flex items-center gap-1'>
             <p>Comments</p>
-            <div className='border border-gray-900 py-1 px-2 rounded-sm'>
+            <div className='border border-zinc-900 py-1 px-2 rounded-sm'>
               <p>{comments.length}</p>
             </div>
           </div>
