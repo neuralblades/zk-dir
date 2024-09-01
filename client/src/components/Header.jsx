@@ -1,14 +1,16 @@
-import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Navbar} from 'flowbite-react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useSelector,useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { FaBookmark } from 'react-icons/fa';
-
 
 export default function Header() {
   const path = useLocation().pathname;
   const dispatch = useDispatch();
-  const {currentUser} = useSelector(state => state.user);
+  const { currentUser } = useSelector(state => state.user);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   const handleSignout = async () => {
     try {
       const res = await fetch('/api/user/signout', {
@@ -25,85 +27,80 @@ export default function Header() {
     }
   };
 
-  const customTheme = {
-    root: {
-      base: "bg-black px-2 py-2.5 border-gray-900 sm:px-4",
-      rounded: {
-        on: "rounded",
-        off: ""
-      },
-      bordered: {
-        on: "border",
-        off: ""
-      },
-      inner: {
-        base: "mx-auto flex flex-wrap items-center justify-between",
-        fluid: {
-          on: "",
-          off: "container"
-        }
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
       }
-    },
-    // ... you can customize other parts of the Navbar here
-  };
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
-    <Navbar className='border-b-2 ' theme={customTheme}>
-      <Link to='/' className='w-[40px]'>
-        <img src="img/logozk.png" alt="#" />
-      </Link>
-      <div className='flex gap-2 md:order-2'>
-        <Link to='/create-post'>
-          <button className=' px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 border-2 border-gray-700 transition duration-300'>
-            New Post
-          </button>
+    <header className="bg-black effect-hover text-white border-b border-zinc-900 h-[8.3vh] min-h-[64px] px-4 py-2">
+      <div className="container mx-auto flex justify-between items-center h-full">
+        <Link to='/' className='w-[40px] logo-hover'>
+          <img src="/img/logozk.png" alt="Logo" className="w-full h-full object-contain" />
         </Link>
-        <Link to='/bookmarks' className="m-3">
-          <FaBookmark size={20} className={path === '/bookmarks'} />
-        </Link>
-        {currentUser ? (
-          <Dropdown
-            arrowIcon={false}
-            inline
-            label={
-              <Avatar 
-                alt='user'
-                img={currentUser.profilePicture}
-                rounded
-              />
-            }
-          >
-            <Dropdown.Header>
-              <span className='block text-sm'>{currentUser.usernsme}</span>
-              <span className='block text-sm font-medium truncate'>{currentUser.email}</span>
-            </Dropdown.Header>
-            <Link to={'/dashboard?tab=profile'}>
-              <DropdownItem>Profile</DropdownItem>
-            </Link>
-            <DropdownDivider />
-            <DropdownItem onClick={handleSignout}>Sign Out</DropdownItem>
-          </Dropdown>
-        ) : (
-          <Link to='/sign-in'>
-            <Button gradientDuoTone='purpleToBlue' outline>
-              Sign In
-            </Button>
+        <div className='flex items-center gap-4'>
+          <Link to='/create-post'>
+            <button className='px-4 py-2 bg-zinc-950 text-white rounded-lg hover:bg-zinc-900 border border-violet-950'>
+              New Post
+            </button>
           </Link>
-        )}
-        
-        <Navbar.Toggle />
+          <Link to='/bookmarks' className="effect-hover">
+            <FaBookmark size={20} className={`${path === '/bookmarks' ? 'text-violet-950' : 'text-white'} transition-colors duration-300`} />
+          </Link>
+          {currentUser ? (
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center focus:outline-none"
+              >
+                <img
+                  src={currentUser.profilePicture}
+                  alt="User"
+                  className="w-10 h-10 rounded-full effect-hover"
+                />
+              </button>
+              {isOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-black border border-zinc-900 rounded-md shadow-lg py-1 z-10">
+                  <div className="px-4 py-2 text-sm text-gray-300">
+                    <p>{currentUser.username}</p>
+                    {/* <p className="truncate">{currentUser.email}</p> */}
+                  </div>
+                  <Link
+                    to="/dashboard?tab=profile"
+                    className="block px-4 py-2 text-sm text-white hover:bg-zinc-900"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleSignout();
+                      setIsOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-900"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to='/sign-in'>
+              <button className="px-4 py-2 bg-violet-950 text-white rounded-lg hover:bg-violet-900 transition-all duration-300 effect-hover">
+                Sign In
+              </button>
+            </Link>
+          )}
+        </div>
       </div>
-      <Navbar.Collapse>
-        <Navbar.Link active={path === '/'} as={'div'}>
-          <Link to='/'>Home</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/about'} as={'div'}>
-          <Link to='/about'>About</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/projects'} as={'div'}>
-          <Link to='/projects'>Projects</Link>
-        </Navbar.Link>
-      </Navbar.Collapse>
-    </Navbar>
+    </header>
   );
 }
