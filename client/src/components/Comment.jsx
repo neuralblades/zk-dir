@@ -50,7 +50,7 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
   };
 
   return (
-    <div className='flex p-4 border-b dark:border-gray-900 text-sm'>
+    <div className='flex p-4 border-b border-zinc-900 text-sm'>
       <div className='flex-shrink-0 mr-3'>
         <img
           className='w-10 h-10 rounded-full bg-gray-200'
@@ -70,7 +70,7 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
         {isEditing ? (
           <>
             <textarea
-              className='w-full p-2 text-sm text-white bg-gray-900 rounded-lg border border-gray-800 focus:ring-gray-900 focus:border-violet-950 mb-2'
+              className='w-full p-2 text-sm text-white bg-zinc-950 rounded-lg border border-zinc-900 focus:ring-gray-900 focus:border-violet-950 mb-2'
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               rows="3"
@@ -78,7 +78,7 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
             <div className='flex justify-end gap-2 text-xs'>
               <button
                 type='button'
-                className='px-3 py-1 text-xs font-medium text-center text-white bg-gray-900 rounded-lg hover:bg-gray-700 focus:ring-4 focus:outline-none focus:ring-violet-950'
+                className='px-3 py-1 text-xs font-medium text-center text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 focus:ring-4 focus:outline-none focus:ring-violet-950'
                 onClick={handleSave}
               >
                 Save
@@ -119,7 +119,7 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
                     <button
                       type='button'
                       onClick={handleEdit}
-                      className='text-gray-400 hover:text-blue-500'
+                      className='text-gray-400 hover:text-violet-500'
                     >
                       Edit
                     </button>
