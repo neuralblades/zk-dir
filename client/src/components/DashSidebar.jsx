@@ -83,7 +83,7 @@ export default function DashSidebar() {
   };
 
   return (
-    <aside className="w-64 h-full" aria-label="Sidebar">
+    <aside className="w-full md:w-64 h-full" aria-label="Sidebar">
       <div className="h-full py-4 px-3 bg-zinc-950 rounded">
         <ul className="space-y-2">
           {currentUser && currentUser.isAdmin && (
