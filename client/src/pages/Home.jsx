@@ -155,7 +155,7 @@ export default function Home() {
   };
 
   return (
-    <div className="mx-auto flex flex-col md:flex-row h-[89vh] overflow-hidden bg-black text-gray-200">
+    <div className="mx-auto flex flex-col md:flex-row h-[87vh] overflow-hidden bg-zinc-950 text-gray-200">
       {isMobileView && (
         <button onClick={toggleSidebar} className="m-4">
           {showSidebar ? 'Hide Filters' : 'Show Filters'}
@@ -163,7 +163,7 @@ export default function Home() {
       )}
       
       {/* Sidebar */}
-      <div className={`${isMobileView ? (showSidebar ? 'block' : 'hidden') : 'block'} w-full md:w-1/4 border border-gray-900 bg-black shadow-lg m-4 mr-0`}>
+      <div className={`${isMobileView ? (showSidebar ? 'block' : 'hidden') : 'block'} effect-hover1 w-full md:w-1/4 border border-zinc-900 bg-black shadow-lg m-4 mr-0`}>
         <div className="p-4">
         <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
             <div className='flex flex-col'>
@@ -174,7 +174,7 @@ export default function Home() {
                 placeholder='Search...'
                 value={sidebarData.searchTerm}
                 onChange={handleChange}
-                className="bg-black text-white border border-gray-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-gray-700"
+                className="bg-black text-white border border-zinc-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-violet-950"
               />
             </div>
             <div className='flex flex-col'>
@@ -183,7 +183,7 @@ export default function Home() {
                 id="sort"
                 value={sidebarData.sort}
                 onChange={handleChange}
-                className="bg-black text-white border border-gray-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-gray-700"
+                className="bg-black text-white border border-zinc-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-violet-950"
               >
                 <option value=''>Default</option>
                 <option value='desc'>Latest</option>
@@ -196,7 +196,7 @@ export default function Home() {
                 id="category"
                 value={sidebarData.category}
                 onChange={handleChange}
-                className="bg-black text-white border border-gray-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-gray-700"
+                className="bg-black text-white border border-zinc-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-violet-950"
               >
                 <option value=''>Default</option>
                 <option value='uncategorized'>Uncategorized</option>
@@ -207,7 +207,7 @@ export default function Home() {
             </div>
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-black text-white rounded hover:bg-gray-900 border border-gray-900 transition duration-300"
+              className="w-full px-4 py-2 bg-zinc-950 text-white rounded hover:bg-zinc-900 border border-violet-950 transition duration-300"
             >
               Apply Filters
             </button>
@@ -216,7 +216,7 @@ export default function Home() {
       </div>
 
       {/* Posts List */}
-      <div className={`${selectedPost && isMobileView ? 'hidden' : 'block'} w-full md:w-1/4 border border-gray-900 bg-black shadow-lg m-4 mr-0 overflow-y-auto`}>
+      <div className={`${selectedPost && isMobileView ? 'hidden' : 'block'} effect-hover1 w-full md:w-1/4 border border-zinc-900 bg-black shadow-lg m-4 mr-0 overflow-y-auto`}>
         <div className="p-4">
           {!loading && posts.length === 0 && (
             <p className='text-xl text-gray-500'>No posts found.</p>
@@ -240,7 +240,7 @@ export default function Home() {
             {showMore && (
               <button
                 onClick={handleShowMore}
-                className='dark:text-white text-gray-800 text-lg hover:underline p-2 w-full'
+                className='text-gray-300 text-sm hover:underline p-2 w-full'
               >
                 Show More
               </button>
@@ -250,7 +250,7 @@ export default function Home() {
       </div>
 
       {/* Post Detail */}
-      <div className={`${!selectedPost && isMobileView ? 'hidden' : 'block'} w-full md:w-1/2 border border-gray-900 bg-black shadow-lg m-4 overflow-y-auto`}>
+      <div className={`${!selectedPost && isMobileView ? 'hidden' : 'block'} effect-hover1 w-full md:w-1/2 border border-zinc-900 bg-black shadow-lg m-4 overflow-y-auto`}>
         {loadingPost ? (
           <div className='flex justify-center items-center h-full'>
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
@@ -265,25 +265,29 @@ export default function Home() {
               ← Back to List
             </button>
             )}
-            <h1 className='text-2xl mt-4 p-2 text-center font-serif'>
-              {selectedPost.title}
-            </h1>
-            <span className="self-center mt-2 px-3 py-1 bg-gray-700 text-white text-sm rounded-full">
-              {selectedPost.category}
-            </span>
-            <img
-              src={selectedPost.image}
-              alt={selectedPost.title}
-              className='mt-4 p-2 max-h-[300px] w-full object-cover'
-            />
-            <div className='flex justify-between p-2 border-b border-gray-900 mx-auto w-full text-xs'>
+            <div className='flex flex-row'>
+              <img
+                src={selectedPost.image}
+                alt={selectedPost.title}
+                className='mt-4 h-20 w-20 object-cover rounded-md'
+              />
+              <div className='flex flex-col mx-4'>
+                <h1 className='text-2xl mt-4 p-2'>
+                  {selectedPost.title}
+                </h1>
+                <span className="self-center mt-2 px-3 py-1 bg-black text-gray-300 border-2 border-violet-950 text-sm rounded-full">
+                  {selectedPost.category}
+                </span>
+              </div>
+            </div>
+            <div className='flex justify-between p-2 border-b border-zinc-900 mx-auto w-full text-xs'>
               <span>{new Date(selectedPost.createdAt).toLocaleDateString()}</span>
               <span className='italic'>
                 {(selectedPost.content.length / 1000).toFixed(0)} mins read
               </span>
             </div>
             <div
-              className='p-2 w-full post-content border-b border-gray-900'
+              className='p-2 w-full post-content border-b border-zinc-900'
               dangerouslySetInnerHTML={{ __html: selectedPost.content }}
             ></div>
             <CommentSection postId={selectedPost._id} />
