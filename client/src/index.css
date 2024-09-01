@@ -54,15 +54,16 @@ body {
 }
 
 .post-content pre {
-  background-color: #111827;
+  background-color: #09090b;
   border-radius: 3px;
   padding: 10px;
   overflow-x: auto;
 }
 
-/* .post-content code {
-  font-family: 'Courier New', Courier, monospace;
-} */
+.post-content code {
+  font-family: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.9rem;
+}
 
 
 /* Custom scrollbar styles */
@@ -71,16 +72,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: #18181b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: #27272a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: #3f3f46;
 }
 
 /* Custom HLJS theme */
@@ -88,6 +89,35 @@ body {
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #111827;
+  background: #09090b;
   color: #f8f8f2;
+}
+
+.logo-hover {
+  transition: filter 0.3s ease-in-out;
+}
+.logo-hover:hover {
+  filter: drop-shadow(0 0 10px violet);
+}
+
+.effect-hover {
+  transition: filter 0.3s ease-in-out;
+}
+.effect-hover:hover {
+  filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.5));
+}
+
+.effect-hover1 {
+  transition: filter 0.3s ease-in-out;
+}
+.effect-hover1:hover {
+  filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.3));
+}
+
+.shadow-bg {
+  filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.9));
+}
+
+.bg-color {
+  background: #14021F;
 }
