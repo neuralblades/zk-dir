@@ -114,6 +114,13 @@ body {
   filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.3));
 }
 
+.effect-hover2 {
+  transition: filter 0.3s ease-in-out;
+}
+.effect-hover2:hover {
+  filter: drop-shadow(0 0 100px rgba(76, 29, 149, 0.9));
+}
+
 .shadow-bg {
   filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.9));
 }
