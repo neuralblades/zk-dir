@@ -172,7 +172,7 @@ export default function DashProfile() {
           hidden
         />
         <div
-          className='relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full'
+          className='relative w-32 h-32 effect-hover2 shadow-bg self-center cursor-pointer shadow-md overflow-hidden rounded-full'
           onClick={() => filePickerRef.current.click()}
         >
           {imageFileUploadProgress && (
@@ -197,7 +197,7 @@ export default function DashProfile() {
           <img
             src={imageFileUrl || currentUser.profilePicture}
             alt='user'
-            className={`rounded-full w-full h-full object-cover border-8 border-[lightgray] ${
+            className={`rounded-full w-full h-full object-cover border-8 border-zinc-800 ${
               imageFileUploadProgress && imageFileUploadProgress < 100 && 'opacity-60'
             }`}
           />
