@@ -1,4 +1,7 @@
-import { Sidebar } from 'flowbite-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { signoutSuccess } from '../redux/user/userSlice';
 import {
   HiUser,
   HiArrowSmRight,
@@ -7,17 +10,54 @@ import {
   HiAnnotation,
   HiChartPie,
 } from 'react-icons/hi';
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { signoutSuccess } from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
-import { useSelector } from 'react-redux';
+
+const SidebarItem = ({ icon: Icon, label, active, onClick, to, children }) => (
+  <li>
+    {to ? (
+      <Link 
+        to={to}
+        className={`flex items-center p-2 text-base font-normal rounded-lg ${
+          active 
+            ? 'bg-zinc-900 text-white'
+            : 'text-gray-300 hover:bg-zinc-900'
+        }`}
+        onClick={onClick}
+      >
+        {Icon && <Icon className="w-6 h-6 text-gray-400 transition duration-75 group-hover:text-white" />}
+        <span className="ml-3 flex-1 whitespace-nowrap">{children}</span>
+        {label && (
+          <span className="inline-flex items-center justify-center px-2 ml-3 text-sm font-medium text-gray-800 bg-gray-200 rounded-full">
+            {label}
+          </span>
+        )}
+      </Link>
+    ) : (
+      <button 
+        className={`w-full flex items-center p-2 text-base font-normal rounded-lg ${
+          active 
+            ? 'bg-zinc-900 text-white' 
+            : 'text-gray-300 hover:bg-zinc-900'
+        }`}
+        onClick={onClick}
+      >
+        {Icon && <Icon className="w-6 h-6 text-gray-400 transition duration-75 group-hover:text-white" />}
+        <span className="ml-3 flex-1 whitespace-nowrap text-left">{children}</span>
+        {label && (
+          <span className="inline-flex items-center justify-center px-2 ml-3 text-sm font-medium text-gray-800 bg-gray-200 rounded-full">
+            {label}
+          </span>
+        )}
+      </button>
+    )}
+  </li>
+);
 
 export default function DashSidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
   const [tab, setTab] = useState('');
+
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabFromUrl = urlParams.get('tab');
@@ -25,6 +65,7 @@ export default function DashSidebar() {
       setTab(tabFromUrl);
     }
   }, [location.search]);
+
   const handleSignout = async () => {
     try {
       const res = await fetch('/api/user/signout', {
@@ -40,74 +81,61 @@ export default function DashSidebar() {
       console.log(error.message);
     }
   };
+
   return (
-    <Sidebar className='w-full md:w-56'>
-      <Sidebar.Items>
-        <Sidebar.ItemGroup className='flex flex-col gap-1'>
+    <aside className="w-64 h-full" aria-label="Sidebar">
+      <div className="h-full py-4 px-3 bg-zinc-950 rounded">
+        <ul className="space-y-2">
           {currentUser && currentUser.isAdmin && (
-            <Link to='/dashboard?tab=dash'>
-              <Sidebar.Item
-                active={tab === 'dash' || !tab}
-                icon={HiChartPie}
-                as='div'
-              >
-                Dashboard
-              </Sidebar.Item>
-            </Link>
-          )}
-          <Link to='/dashboard?tab=profile'>
-            <Sidebar.Item
-              active={tab === 'profile'}
-              icon={HiUser}
-              label={currentUser.isAdmin ? 'Admin' : 'User'}
-              labelColor='dark'
-              as='div'
+            <SidebarItem 
+              icon={HiChartPie}
+              active={tab === 'dash' || !tab}
+              to='/dashboard?tab=dash'
             >
-              Profile
-            </Sidebar.Item>
-          </Link>
-          {currentUser.isAdmin && (
-            <Link to='/dashboard?tab=posts'>
-              <Sidebar.Item
-                active={tab === 'posts'}
-                icon={HiDocumentText}
-                as='div'
-              >
-                Posts
-              </Sidebar.Item>
-            </Link>
+              Dashboard
+            </SidebarItem>
           )}
+          <SidebarItem 
+            icon={HiUser}
+            active={tab === 'profile'}
+            to='/dashboard?tab=profile'
+            label={currentUser.isAdmin ? 'Admin' : 'User'}
+          >
+            Profile
+          </SidebarItem>
           {currentUser.isAdmin && (
             <>
-              <Link to='/dashboard?tab=users'>
-                <Sidebar.Item
-                  active={tab === 'users'}
-                  icon={HiOutlineUserGroup}
-                  as='div'
-                >
-                  Users
-                </Sidebar.Item>
-              </Link>
-              <Link to='/dashboard?tab=comments'>
-                <Sidebar.Item
-                  active={tab === 'comments'}
-                  icon={HiAnnotation}
-                  as='div'
-                >
-                  Comments
-                </Sidebar.Item>
-              </Link>
+              <SidebarItem 
+                icon={HiDocumentText}
+                active={tab === 'posts'}
+                to='/dashboard?tab=posts'
+              >
+                Posts
+              </SidebarItem>
+              <SidebarItem 
+                icon={HiOutlineUserGroup}
+                active={tab === 'users'}
+                to='/dashboard?tab=users'
+              >
+                Users
+              </SidebarItem>
+              <SidebarItem 
+                icon={HiAnnotation}
+                active={tab === 'comments'}
+                to='/dashboard?tab=comments'
+              >
+                Comments
+              </SidebarItem>
             </>
           )}
-          <Sidebar.Item
+          <SidebarItem 
             icon={HiArrowSmRight}
-            className='cursor-pointer'
             onClick={handleSignout}
           >
             Sign Out
-          </Sidebar.Item>
-        </Sidebar.ItemGroup>
-      </Sidebar.Items>
-    </Sidebar>
+          </SidebarItem>
+        </ul>
+      </div>
+    </aside>
   );
 }
