@@ -36,7 +36,7 @@ export default function PostCard({ post, onClick }) {
   }
 
   return (
-    <div className="border border-gray-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer" onClick={onClick}>
+    <div className="border effect-hover border-zinc-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer" onClick={onClick}>
       <div className='flex items-center gap-4 mb-2'>
         <Link to={`/post/${post.slug}`} className="flex-shrink-0">
           <img
@@ -47,9 +47,9 @@ export default function PostCard({ post, onClick }) {
         </Link>
         <h2 className="text-lg font-semibold line-clamp-2">{post.title}</h2>
       </div>
-      <div className="flex justify-between text-xs text-gray-400 mb-2">
+      <div className="flex justify-between text-xs text-gray-300 mb-2">
         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-        <span className="px-2 py-1 bg-gray-700 rounded-full">{post.category}</span>
+        <span className="px-2 py-1 bg-black border-2 border-violet-950 rounded-full">{post.category}</span>
         <span>{username}</span>
       </div>
       {post.severity && (
