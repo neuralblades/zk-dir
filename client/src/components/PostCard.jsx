@@ -49,7 +49,7 @@ export default function PostCard({ post, onClick }) {
       </div>
       <div className="flex justify-between text-xs text-gray-300 mb-2">
         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-        <span className="px-2 py-1 bg-black border-2 border-violet-950 rounded-full">{post.category}</span>
+        <span className="px-2 py-1 bg-zinc-950 border-2 border-zinc-900 rounded-full">{post.category}</span>
         <span>{username}</span>
       </div>
       {post.severity && (
