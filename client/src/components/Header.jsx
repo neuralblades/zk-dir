@@ -44,57 +44,58 @@ export default function Header() {
     <header className="bg-black effect-hover text-white border-b border-zinc-900 h-[8.3vh] min-h-[64px] px-4 py-2">
       <div className="container mx-auto flex justify-between items-center h-full">
         <Link to='/' className='w-[40px] logo-hover'>
-          <img src="/img/logozk.png" alt="Logo" className="w-full h-full object-contain" />
+          <img src="/img/logozk1.png" alt="Logo" className="w-full h-full object-contain" />
         </Link>
         <div className='flex items-center gap-4'>
-          <Link to='/create-post'>
-            <button className='px-4 py-2 bg-zinc-950 text-white rounded-lg hover:bg-zinc-900 border border-violet-950'>
-              New Post
-            </button>
-          </Link>
-          <Link to='/bookmarks' className="effect-hover">
-            <FaBookmark size={20} className={`${path === '/bookmarks' ? 'text-violet-950' : 'text-white'} transition-colors duration-300`} />
-          </Link>
           {currentUser ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center focus:outline-none"
-              >
-                <img
-                  src={currentUser.profilePicture}
-                  alt="User"
-                  className="w-10 h-10 rounded-full effect-hover"
-                />
-              </button>
-              {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-black border border-zinc-900 rounded-md shadow-lg py-1 z-10">
-                  <div className="px-4 py-2 text-sm text-gray-300">
-                    <p>{currentUser.username}</p>
-                    {/* <p className="truncate">{currentUser.email}</p> */}
+            <>
+              <Link to='/create-post'>
+                <button className='px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-900 transition delay-100 duration-300'>
+                  New Post
+                </button>
+              </Link>
+              <Link to='/bookmarks' className="effect-hover">
+                <FaBookmark size={20} className={`${path === '/bookmarks' ? 'text-blue-500' : 'text-white'} transition-colors duration-300`} />
+              </Link>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="flex items-center focus:outline-none"
+                >
+                  <img
+                    src={currentUser.profilePicture}
+                    alt="User"
+                    className="w-10 h-10 rounded-full effect-hover"
+                  />
+                </button>
+                {isOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-black border border-zinc-900 rounded-md shadow-lg py-1 z-10">
+                    <div className="px-4 py-2 text-sm text-gray-300">
+                      <p>{currentUser.username}</p>
+                    </div>
+                    <Link
+                      to="/dashboard?tab=profile"
+                      className="block px-4 py-2 text-sm text-white hover:bg-zinc-900"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleSignout();
+                        setIsOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-900"
+                    >
+                      Sign Out
+                    </button>
                   </div>
-                  <Link
-                    to="/dashboard?tab=profile"
-                    className="block px-4 py-2 text-sm text-white hover:bg-zinc-900"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      handleSignout();
-                      setIsOpen(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-900"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </>
           ) : (
             <Link to='/sign-in'>
-              <button className="px-4 py-2 bg-violet-950 text-white rounded-lg hover:bg-zinc-900 transition-all duration-300 effect-hover">
+              <button className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-zinc-900 transition delay-100 duration-300">
                 Sign In
               </button>
             </Link>
