@@ -4,11 +4,11 @@ import OAuth from '../components/OAuth';
 
 const InputField = ({ label, type, placeholder, id, onChange }) => (
   <div className="mb-4">
-    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor={id}>
+    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor={id}>
       {label}
     </label>
     <input
-      className="shadow appearance-none border rounded w-full py-2 px-3 bg-zinc-900 text-gray-700 leading-tight focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-violet-950"
+      className="shadow appearance-none border rounded w-full py-2 px-3 bg-zinc-900 text-gray-200 leading-tight focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-gray-950"
       type={type}
       placeholder={placeholder}
       id={id}
@@ -19,7 +19,7 @@ const InputField = ({ label, type, placeholder, id, onChange }) => (
 
 const Button = ({ type, disabled, children }) => (
   <button
-    className={`w-full bg-violet-950 hover:bg-zinc-950 border border-violet-950 text-white font-bold py-2 px-4 rounded focus:outline-none ${
+    className={`w-full bg-gray-200 hover:bg-zinc-100 transition delay-100 duration-300 border border-blue-800 text-black font-bold py-2 px-4 rounded focus:outline-none ${
       disabled ? 'opacity-50 cursor-not-allowed' : ''
     }`}
     type={type}
@@ -77,10 +77,10 @@ export default function SignUp() {
       <div className='max-w-md w-full space-y-8'>
         <div>
           <Link to='/'>
-            <img className="mx-auto shadow-bg h-12 w-auto" src="/img/logozk3.png" alt="Logo" />
+            <img className="mx-auto h-12 w-auto" src="/img/logozk1.png" alt="Logo" />
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-300">
-            Create your account
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-100">
+            SIGN UP
           </h2>
         </div>
         <form className='mt-8 space-y-6' onSubmit={handleSubmit}>
