@@ -97,7 +97,7 @@ body {
   transition: filter 0.3s ease-in-out;
 }
 .logo-hover:hover {
-  filter: drop-shadow(0 0 10px violet);
+  filter: drop-shadow(0 0 10px rgb(255, 255, 255));
 }
 
 .effect-hover {
