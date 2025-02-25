@@ -1,4 +1,4 @@
-import { Button, Spinner } from 'flowbite-react';
+import { Button, Spinner, Badge } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CommentSection from '../components/CommentSection';
@@ -59,49 +59,176 @@ export default function PostPage() {
     }
   }, [post]);
 
+  // Helper function to get severity color
+  const getSeverityColor = (severity) => {
+    const colors = {
+      low: 'green',
+      medium: 'yellow',
+      high: 'orange',
+      critical: 'red'
+    };
+    return colors[severity] || 'gray';
+  };
+
   if (loading)
     return (
-      <div className='flex justify-center items-center h-full'>
+      <div className='flex justify-center items-center min-h-screen'>
         <Spinner size='xl' />
       </div>
     );
 
   if (error)
     return (
-      <div className='flex justify-center items-center h-full'>
+      <div className='flex justify-center items-center min-h-screen'>
         <p className='text-red-500'>Error loading post.</p>
       </div>
     );
 
   return (
-    <main className='p-3 flex flex-col max-w-6xl h-full mx-auto overflow-y-auto'>
-      <h1 className='text-2xl mt-4 p-2 text-center font-serif'>
-        {post && post.title}
-      </h1>
-      <Link
-        to={`/search?category=${post && post.category}`}
-        className='self-center mt-2'
-      >
-        <Button color='gray' pill size='xs'>
-          {post && post.category}
-        </Button>
-      </Link>
-      <img
-        src={post && post.image}
-        alt={post && post.title}
-        className='mt-4 p-2 max-h-[300px] w-full object-cover'
-      />
-      <div className='flex justify-between p-2 border-b border-slate-500 mx-auto w-full text-xs'>
-        <span>{post && new Date(post.createdAt).toLocaleDateString()}</span>
-        <span className='italic'>
-          {post && (post.content.length / 1000).toFixed(0)} mins read
-        </span>
+    <main className='p-3 flex flex-col max-w-6xl mx-auto min-h-screen'>
+      {/* Header Section */}
+      <div className="space-y-4 border-b border-zinc-800 pb-6">
+        <h1 className='text-3xl font-bold text-center'>
+          {post?.title}
+        </h1>
+
+        {/* Meta Information */}
+        <div className="flex flex-wrap justify-center gap-2 text-sm">
+          {post?.category && (
+            <span className="px-3 py-1 bg-zinc-800 rounded-full">
+              {post.category}
+            </span>
+          )}
+          {post?.protocol?.name && (
+            <span className="px-3 py-1 bg-zinc-800 rounded-full">
+              {post.protocol.name} ({post.protocol.type})
+            </span>
+          )}
+          {post?.severity && (
+            <span className={`px-3 py-1 rounded-full bg-${getSeverityColor(post.severity)}-900 text-${getSeverityColor(post.severity)}-300`}>
+              {post.severity.toUpperCase()} Severity
+            </span>
+          )}
+          {post?.difficulty && (
+            <span className="px-3 py-1 bg-zinc-800 rounded-full">
+              {post.difficulty} difficulty
+            </span>
+          )}
+        </div>
+
+        {/* Tags and Frameworks */}
+        {(post?.tags?.length > 0 || post?.frameworks?.length > 0) && (
+          <div className="flex flex-wrap justify-center gap-2 text-xs">
+            {post?.tags?.map((tag, index) => (
+              <span key={index} className="px-2 py-1 bg-zinc-900 rounded-md">
+                #{tag}
+              </span>
+            ))}
+            {post?.frameworks?.map((framework, index) => (
+              <span key={index} className="px-2 py-1 bg-blue-900 rounded-md">
+                {framework}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Reporters */}
+        {post?.reported_by?.length > 0 && (
+          <div className="text-center text-sm text-gray-400">
+            Reported by: {post.reported_by.join(', ')}
+          </div>
+        )}
+
+        {/* Date and Read Time */}
+        <div className='flex justify-center gap-4 text-sm text-gray-400'>
+          <span>{new Date(post?.createdAt).toLocaleDateString()}</span>
+          <span>·</span>
+          <span className='italic'>
+            {post && (post.content.length / 1000).toFixed(0)} mins read
+          </span>
+        </div>
       </div>
-      <div
-        className='p-2 w-full post-content border-b border-slate-500'
-        dangerouslySetInnerHTML={{ __html: post && post.content }}
-      ></div>
-      <CommentSection postId={post._id} />
+
+      {/* Cover Image */}
+      {post?.image && (
+        <img
+          src={post.image}
+          alt={post.title}
+          className='mt-6 max-h-[400px] w-full object-cover rounded-lg'
+        />
+      )}
+
+      {/* Scope Section */}
+      {post?.scope?.length > 0 && (
+        <div className="mt-6 p-4 bg-zinc-900 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4">Scope</h2>
+          <div className="space-y-4">
+            {post.scope.map((item, index) => (
+              <div key={index} className="p-4 bg-zinc-800 rounded-lg">
+                <h3 className="font-medium">{item.name}</h3>
+                {item.repository && (
+                  <a 
+                    href={item.repository}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline text-sm break-all"
+                  >
+                    {item.repository}
+                  </a>
+                )}
+                {item.commit_hash && (
+                  <p className="text-gray-400 text-sm mt-1">
+                    Commit: {item.commit_hash}
+                  </p>
+                )}
+                {item.description && (
+                  <p className="text-sm mt-2">{item.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Impact and Recommendation */}
+      {(post?.impact || post?.recommendation) && (
+        <div className="mt-6 space-y-4">
+          {post.impact && (
+            <div className="p-4 bg-red-900/20 rounded-lg">
+              <h2 className="text-xl font-semibold mb-2">Impact</h2>
+              <p>{post.impact}</p>
+            </div>
+          )}
+          {post.recommendation && (
+            <div className="p-4 bg-green-900/20 rounded-lg">
+              <h2 className="text-xl font-semibold mb-2">Recommendation</h2>
+              <p>{post.recommendation}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Detailed Description</h2>
+        <div
+          className='post-content prose prose-invert max-w-none'
+          dangerouslySetInnerHTML={{ __html: post?.content }}
+        />
+      </div>
+
+      {/* Target File */}
+      {post?.target_file && (
+        <div className="mt-6 p-4 bg-zinc-900 rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">Target File</h2>
+          <code className="text-sm break-all">{post.target_file}</code>
+        </div>
+      )}
+
+      {/* Comments Section */}
+      <div className="mt-8">
+        <CommentSection postId={post?._id} />
+      </div>
     </main>
   );
 }

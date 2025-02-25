@@ -104,25 +104,25 @@ body {
   transition: filter 0.3s ease-in-out;
 }
 .effect-hover:hover {
-  filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.5));
+  filter: drop-shadow(0 0 8px rgba(73, 73, 73, 0.3));
 }
 
 .effect-hover1 {
   transition: filter 0.3s ease-in-out;
 }
 .effect-hover1:hover {
-  filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.3));
+  filter: drop-shadow(0 0 8px rgba(73, 73, 73, 0.3));
 }
 
 .effect-hover2 {
   transition: filter 0.3s ease-in-out;
 }
 .effect-hover2:hover {
-  filter: drop-shadow(0 0 100px rgba(76, 29, 149, 0.9));
+  filter: drop-shadow(0 0 10px rgba(88, 88, 88, 0.9));
 }
 
 .shadow-bg {
-  filter: drop-shadow(0 0 8px rgba(76, 29, 149, 0.9));
+  filter: drop-shadow(0 0 8px rgba(49, 49, 49, 0.9));
 }
 
 .bg-color {

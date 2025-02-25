@@ -41,9 +41,9 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="bg-black effect-hover text-white border-b border-zinc-900 h-[8.3vh] min-h-[64px] px-4 py-2">
+    <header className="bg-black effect-hover text-white border-b border-zinc-900 h-[8.3vh] min-h-[64px] px-4 py-2 relative z-50">
       <div className="container mx-auto flex justify-between items-center h-full">
-        <Link to='/' className='w-[40px] logo-hover'>
+        <Link to='/' className='w-[40px]'>
           <img src="/img/logozk1.png" alt="Logo" className="w-full h-full object-contain" />
         </Link>
         <div className='flex items-center gap-4'>
@@ -69,7 +69,7 @@ export default function Header() {
                   />
                 </button>
                 {isOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-black border border-zinc-900 rounded-md shadow-lg py-1 z-10">
+                  <div className="absolute right-0 mt-2 w-48 bg-black border border-zinc-900 rounded-md shadow-lg py-1">
                     <div className="px-4 py-2 text-sm text-gray-300">
                       <p>{currentUser.username}</p>
                     </div>

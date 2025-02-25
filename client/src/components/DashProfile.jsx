@@ -31,7 +31,7 @@ const Button = ({ type, onClick, disabled, children, className }) => (
     type={type}
     onClick={onClick}
     disabled={disabled}
-    className={`px-4 py-2 font-bold text-white bg-zinc-950 border border-violet-950 effect-hover rounded focus:outline-none focus:shadow-outline ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+    className={`px-4 py-2 font-bold text-white bg-zinc-950 hover:bg-zinc-700 border border-zinc-700 transition duration-300 rounded focus:outline-none focus:shadow-outline ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
   >
     {children}
   </button>
@@ -44,7 +44,7 @@ const TextInput = ({ type, id, placeholder, defaultValue, onChange }) => (
     placeholder={placeholder}
     defaultValue={defaultValue}
     onChange={onChange}
-    className="shadow appearance-none border border-zinc-800 rounded w-full py-2 px-3 text-gray-200 bg-zinc-900 leading-tight focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-violet-950"
+    className="shadow appearance-none border border-zinc-800 rounded w-full py-2 px-3 text-gray-200 bg-zinc-900 leading-tight focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-500"
   />
 );
 
@@ -172,7 +172,7 @@ export default function DashProfile() {
           hidden
         />
         <div
-          className='relative w-32 h-32 effect-hover2 shadow-bg self-center cursor-pointer shadow-md overflow-hidden rounded-full'
+          className='relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full'
           onClick={() => filePickerRef.current.click()}
         >
           {imageFileUploadProgress && (
@@ -197,7 +197,7 @@ export default function DashProfile() {
           <img
             src={imageFileUrl || currentUser.profilePicture}
             alt='user'
-            className={`rounded-full w-full h-full object-cover border-8 border-zinc-800 ${
+            className={`rounded-full w-full h-full object-cover border-8 border-zinc-900 ${
               imageFileUploadProgress && imageFileUploadProgress < 100 && 'opacity-60'
             }`}
           />

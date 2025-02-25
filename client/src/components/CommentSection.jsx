@@ -153,7 +153,7 @@ export default function CommentSection({ postId }) {
               {200 - comment.length} characters remaining
             </p>
             <button
-              className='px-4 py-2 bg-zinc-950 text-white rounded-md border border-violet-950 hover:bg-zinc-900 transition duration-300'
+              className='px-4 py-2 bg-zinc-950 text-white rounded-md border-2 border-zinc-900 hover:bg-zinc-900 transition duration-300'
               type='submit'
             >
               Submit
