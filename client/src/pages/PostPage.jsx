@@ -1,6 +1,6 @@
-import { Button, Spinner, Badge } from 'flowbite-react';
+import { Spinner } from 'flowbite-react';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import CommentSection from '../components/CommentSection';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/monokai-sublime.css';
@@ -88,12 +88,22 @@ export default function PostPage() {
     <main className='p-3 flex flex-col max-w-6xl mx-auto min-h-screen'>
       {/* Header Section */}
       <div className="space-y-4 border-b border-zinc-800 pb-6">
-        <h1 className='text-3xl font-bold text-center'>
-          {post?.title}
-        </h1>
+        <div className='flex justify-between mt-6'>
+          {/* Cover Image */}
+          {post?.image && (
+            <img
+              src={post.image}
+              alt={post.title}
+              className='max-h-[400px] w-20 object-cover rounded-lg'
+            />
+          )}
+          <h1 className='text-3xl px-4 font-bold text-left'>
+            {post?.title}
+          </h1>
+        </div>
 
         {/* Meta Information */}
-        <div className="flex flex-wrap justify-center gap-2 text-sm">
+        <div className="flex flex-wrap justify-left gap-2 text-sm">
           {post?.category && (
             <span className="px-3 py-1 bg-zinc-800 rounded-full">
               {post.category}
@@ -118,7 +128,7 @@ export default function PostPage() {
 
         {/* Tags and Frameworks */}
         {(post?.tags?.length > 0 || post?.frameworks?.length > 0) && (
-          <div className="flex flex-wrap justify-center gap-2 text-xs">
+          <div className="flex flex-wrap justify-left gap-2 text-xs">
             {post?.tags?.map((tag, index) => (
               <span key={index} className="px-2 py-1 bg-zinc-900 rounded-md">
                 #{tag}
@@ -134,13 +144,13 @@ export default function PostPage() {
 
         {/* Reporters */}
         {post?.reported_by?.length > 0 && (
-          <div className="text-center text-sm text-gray-400">
+          <div className="text-left text-sm text-gray-400">
             Reported by: {post.reported_by.join(', ')}
           </div>
         )}
 
         {/* Date and Read Time */}
-        <div className='flex justify-center gap-4 text-sm text-gray-400'>
+        <div className='flex justify-left gap-4 text-sm text-gray-400'>
           <span>{new Date(post?.createdAt).toLocaleDateString()}</span>
           <span>·</span>
           <span className='italic'>
@@ -148,15 +158,6 @@ export default function PostPage() {
           </span>
         </div>
       </div>
-
-      {/* Cover Image */}
-      {post?.image && (
-        <img
-          src={post.image}
-          alt={post.title}
-          className='mt-6 max-h-[400px] w-full object-cover rounded-lg'
-        />
-      )}
 
       {/* Scope Section */}
       {post?.scope?.length > 0 && (
