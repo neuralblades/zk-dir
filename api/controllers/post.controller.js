@@ -21,6 +21,7 @@ export const create = async (req, res, next) => {
     slug,
     userId: req.user.id,
     // Initialize ZK-specific fields with defaults if not provided
+    image: req.body.image || 'https://i.postimg.cc/rsrr3rH1/zk-logo.png',
     publishDate: req.body.publishDate || new Date(),
     reportSource: {
       name: req.body.reportSource?.name || '',
@@ -162,7 +163,7 @@ export const updatepost = async (req, res, next) => {
           title: req.body.title,
           content: req.body.content,
           category: req.body.category,
-          image: req.body.image,
+          image: req.body.image || 'https://i.postimg.cc/rsrr3rH1/zk-logo.png',
           // Add ZK-specific field updates
           publishDate: req.body.publishDate,
           reportSource: {
