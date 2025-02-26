@@ -486,7 +486,6 @@ export default function Home() {
               {/* Meta Information */}
               <div className="flex flex-wrap gap-4 text-sm text-gray-400">
                 <span>Published {new Date(selectedPost.publishDate).toLocaleDateString()}</span>
-                <span>·</span>
                 {selectedPost.auditFirm && (
                   <>
                     <span>·</span>
