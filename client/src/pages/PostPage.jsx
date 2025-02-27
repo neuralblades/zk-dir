@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import CommentSection from '../components/CommentSection';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/monokai-sublime.css';
+import 'highlight.js/styles/atom-one-dark.css';
 
 export default function PostPage() {
   const { postSlug } = useParams();
@@ -39,23 +39,65 @@ export default function PostPage() {
     if (post && post.content) {
       setTimeout(() => {
         try {
+          // Configure highlight.js
+          hljs.configure({
+            ignoreUnescapedHTML: true
+          });
+          
           const contentElement = document.querySelector('.post-content');
           if (contentElement) {
-            contentElement.querySelectorAll('pre.ql-syntax').forEach((preBlock) => {
+            // Case 1: Handle ReactQuill's code blocks (pre.ql-syntax without code tag)
+            contentElement.querySelectorAll('pre.ql-syntax:not(:has(code))').forEach((preBlock) => {
               const code = document.createElement('code');
               code.innerHTML = preBlock.innerHTML;
               preBlock.innerHTML = '';
               preBlock.appendChild(code);
             });
-
-            document.querySelectorAll('pre code').forEach((block) => {
+            
+            // Apply highlighting to all code blocks
+            contentElement.querySelectorAll('pre code').forEach((block) => {
               hljs.highlightElement(block);
+            });
+            
+            // Optional: Add copy button to all code blocks
+            contentElement.querySelectorAll('pre').forEach((preBlock) => {
+              if (!preBlock.querySelector('.copy-button')) {
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-button';
+                copyButton.textContent = 'Copy';
+                copyButton.style.position = 'absolute';
+                copyButton.style.right = '10px';
+                copyButton.style.top = '10px';
+                copyButton.style.padding = '4px 8px';
+                copyButton.style.backgroundColor = '#444';
+                copyButton.style.color = 'white';
+                copyButton.style.border = 'none';
+                copyButton.style.borderRadius = '4px';
+                copyButton.style.fontSize = '12px';
+                copyButton.style.cursor = 'pointer';
+                copyButton.style.opacity = '0.7';
+                
+                copyButton.addEventListener('click', () => {
+                  const code = preBlock.querySelector('code');
+                  if (code) {
+                    navigator.clipboard.writeText(code.textContent);
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => {
+                      copyButton.textContent = 'Copy';
+                    }, 2000);
+                  }
+                });
+                
+                // Make preBlock position relative for absolute positioning
+                preBlock.style.position = 'relative';
+                preBlock.appendChild(copyButton);
+              }
             });
           }
         } catch (e) {
           console.error('Error applying syntax highlighting:', e);
         }
-      }, 0);
+      }, 150);
     }
   }, [post]);
 
@@ -223,6 +265,39 @@ export default function PostPage() {
         <div className="mt-6 p-4 bg-zinc-900 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">Target File</h2>
           <code className="text-sm break-all">{post.target_file}</code>
+        </div>
+      )}
+
+      {/* Source Information */}
+      {(post?.auditFirm || post?.reportSource?.name) && (
+        <div className="mt-6 p-4 bg-zinc-900 rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">Source</h2>
+          {post?.auditFirm && (
+            <p className="mb-2">Audit Firm: {post.auditFirm}</p>
+          )}
+          {post?.reportSource?.name && (
+            <div>
+              <p>Reported by: {post.reportSource.name}</p>
+              {post.reportSource.url && (
+                <a 
+                  href={post.reportSource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline text-sm"
+                >
+                  View Original Report
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Finding ID if available */}
+      {post?.finding_id && (
+        <div className="mt-6 p-4 bg-zinc-900 rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">Finding ID</h2>
+          <p>{post.finding_id}</p>
         </div>
       )}
 
