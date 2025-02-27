@@ -53,18 +53,6 @@ body {
   border-radius: 3px;
 }
 
-.post-content pre {
-  background-color: #09090b;
-  border-radius: 3px;
-  padding: 10px;
-  overflow-x: auto;
-}
-
-.post-content code {
-  font-family: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
-  font-size: 0.9rem;
-}
-
 
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
@@ -127,4 +115,75 @@ body {
 
 .bg-color {
   background: #14021F;
+}
+
+/* Add this to your CSS file */
+
+/* Code block styling */
+.post-content pre {
+  background-color: #282c34;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  overflow: auto;
+}
+
+.post-content pre code {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #abb2bf;
+  display: block;
+  width: 100%;
+  white-space: pre;
+}
+
+/* Language-specific styles */
+.post-content .hljs-keyword {
+  color: #c678dd;
+}
+
+.post-content .hljs-title {
+  color: #61afef;
+}
+
+.post-content .hljs-string {
+  color: #98c379;
+}
+
+.post-content .hljs-number {
+  color: #d19a66;
+}
+
+.post-content .hljs-comment {
+  color: #7f848e;
+  font-style: italic;
+}
+
+/* Specific styling for Solidity (even if not natively supported) */
+.post-content .language-solidity .hljs-keyword,
+.post-content .language-solidity .hljs-title.class_ {
+  color: #569cd6;
+}
+
+.post-content .language-solidity .hljs-title.function_ {
+  color: #dcdcaa;
+}
+
+/* For ReactQuill code blocks */
+.post-content pre.ql-syntax {
+  background-color: #282c34;
+  color: #abb2bf;
+  overflow: visible;
+}
+
+/* Figure captions under code blocks */
+.post-content pre + em,
+.post-content pre + i {
+  display: block;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #7f848e;
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
 }
