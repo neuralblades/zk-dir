@@ -15,7 +15,15 @@ const processContent = (contentArray) => {
     if (item.type === 'text') {
       return item.text;
     } else if (item.type === 'code') {
-      return `\n\`\`\`${item.language || ''}\n${item.code}\n\`\`\`\n${item.description ? `*${item.description}*\n` : ''}`;
+      // Create properly formatted code blocks with language class
+      // This format will be compatible with highlight.js
+      return `<pre><code class="language-${item.language || ''}">${
+        // Escape HTML entities to prevent rendering issues
+        item.code
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+      }</code></pre>${item.description ? `<p><em>${item.description}</em></p>` : ''}`;
     }
     return '';
   }).join('\n\n');
