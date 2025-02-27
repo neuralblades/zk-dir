@@ -1,154 +1,322 @@
 [
-    {
-      "title": "ModGadget is underconstrained and allows incorrect MULMOD operations to be proven",
-      "source": "Trail Of Bits",
-      "date": "2023-12-10",
-      "protocol": "Scroll ZkEVM",
-      "protocol_type": "ZKEVM",
-      "tags": [],
-      "frameworks": [],
-      "reported_by": ["Filipe Casal", "Joe Doyle", "Opal Wright", "Will Song"],
-      "scope": [
-        {
-          "name": "zkevm-circuits",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/e8bcb23e1f303bd6e0dc52924b0ed85710b8a016",
-          "commit_hash": "e8bcb23e1f303bd6e0dc52924b0ed85710b8a016"
-        },
-        {
-          "name": "snark-verifier code diff",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/snark-verifier/pull/2",
-          "commit_hash": "a3d0a5ab48522bc533686da3ea8400282c91f536"
-        },
-        {
-          "name": "modexp",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/misc-precompiled-circuit/tree/05725ec61d52d29a063395b0a1130467bee0d2f1",
-          "commit_hash": "05725ec61d52d29a063395b0a1130467bee0d2f1"
-        },
-        {
-          "name": "halo2-lib code diff",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/halo2-lib/pull/8",
-          "commit_hash": "a805052->b1d1567"
-        },
-        {
-          "name": "Bytecode circuit",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/44000e55eddaec42da958f2555d9bdeec8b865c2/zkevm-circuits/src/bytecode_circuit",
-          "commit_hash": "44000e55eddaec42da958f2555d9bdeec8b865c2"
-        }
-      ],
-      "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
-      "severity": "high",
-      "difficulty": "medium",
-      "type": "data validation",
-      "finding_id": "TOB-SCROLL-1",
-      "target_file": "zkevm-circuits/src/evm_circuit/util/math_gadget/modulo.rs",
-      "content": [
-        {
-          "type": "text",
-          "text": "The ModGadget circuit computes the modulo operation, a mod n, with the caveat that the result should be 0 whenever n is 0. However, an incorrect constraint allows a proof that that a mod 0 == a. This causes incorrect EVM semantics for the MULMOD opcode, allowing an attacker to prove that ab mod 0 == ab. According to the EVM semantics, the correct result is 0"
-        },
-        {
-          "type": "text",
-          "text": "The ModGadget circuit implementation uses a witness value, a_or_zero, that is supposed to take the value of a when n is nonzero or 0 when n is 0. The code comments indicate that the following constraint ensures that a_or_zero satisfies this condition, but the constraint also allows the case a_or_zero == a and n == 0:"
-        },
-        {
-          "type": "code",
-          "code": "/// Constraints for the words a, n, r:\n/// a mod n = r, if n!=0\n/// r = 0, if n==0\n///\n/// We use the auxiliary a_or_zero word, whose value is constrained to be:\n/// a_or_zero = a if n!=0, 0 if n==0. This allows to use the equation\n/// k * n + r = a_or_zero to verify the modulus, which holds with r=0 in the\n/// case of n=0. Unlike the usual k * n + r = a, which forces r = a when n=0,\n/// this equation assures that r<n or r=n=0.\n...\nimpl<F: Field> ModGadget<F> {\n  pub(crate) fn construct(cb: &mut ConstraintBuilder<F>, words: [&util::Word<F>;\n    3]) -> Self {\n    let (a, n, r) = (words[0], words[1], words[2]);\n    let k = cb.query_word_rlc();\n    let a_or_zero = cb.query_word_rlc();\n    let n_is_zero = IsZeroGadget::construct(cb, sum::expr(&n.cells));\n    let a_or_is_zero = IsZeroGadget::construct(cb, sum::expr(&a_or_zero.cells));\n    let mul_add_words = MulAddWordsGadget::construct(cb, [&k, n, r,\n      &a_or_zero]);\n    let eq = IsEqualGadget::construct(cb, a.expr(), a_or_zero.expr());\n    let lt = LtWordGadget::construct(cb, r, n);\n    // Constrain the aux variable a_or_zero to be =a or =0 if n==0:\n    // (a == a_or_zero) ^ (n == 0 & a_or_zero == 0)\n    cb.add_constraint(\n      \" (1 - (a == a_or_zero)) * ( 1 - (n == 0) * (a_or_zero == 0)\",\n      (1.expr() - eq.expr()) * (1.expr() - n_is_zero.expr() *\n      a_or_is_zero.expr()),\n    );\n  }",
-          "language": "rust",
-          "description": "Figure 1.1: evm_circuit/util/math_gadget/modulo.rs#L10-L44"
-        },
-        {
-          "type": "text",
-          "text": "To correctly constrain the a_or_zero variable, rewrite the constraint as the following: [1 - ((n==0)*(a_or_zero==0) + (1 - n==0) * (a_or_zero == a)))] == 0 This constraint results in the following truth table:"
-        },
-        {
-          "type": "text",
-          "text": "Figure 1.2 shows how ModGadget is used to constrain the results of the MULMOD opcode. Since the constraints are satisfied by setting a_reduced == a instead of a_reduced == 0, when 𝑎 · 𝑏 < 2^256 , the result can be set to by setting . k1 = k2 = d = 0, e = r =  a . b"
-        },
-        {
-          "type": "code",
-          "code": "// 1. k1 * n + a_reduced == a\nlet modword = ModGadget::construct(cb, [&a, &n, &a_reduced]);\n// 2. a_reduced * b + 0 == d * 2^256 + e\nlet mul512_left = MulAddWords512Gadget::construct(cb, [&a_reduced, &b, &d, &e],\n  None);\n// 3. k2 * n + r == d * 2^256 + e\nlet mul512_right = MulAddWords512Gadget::construct(cb, [&k, &n, &d, &e], Some(&r));\n// (r < n ) or n == 0\nlet n_is_zero = IsZeroGadget::construct(cb, sum::expr(&n.cells));\nlet lt = LtWordGadget::construct(cb, &r, &n);\ncb.add_constraint(\n  \" (1 - (r < n) - (n==0)) \",\n  1.expr() - lt.expr() - n_is_zero.expr(),\n);",
-          "language": "rust",
-          "description": "Figure 1.2: zkevm-circuits/src/evm_circuit/execution/mulmod.rs#58–73"
-        }
-      ],
-      "impact": "A malicious prover interprets two bytes in an RLP-serialized data structure as a value less than 128, causing later fields in the data structure to be deserialized starting at an incorrect offset. The prover submits that proof, the results of which will not match the correct EVM semantics, leading to state divergence and loss of funds.",
-      "recommendation": "Short term, fix the constraint; extend the assign function to receive the a_or_zero witness. Add tests for this finding. Long term, add determinacy testing to any gadgets that constrain nondeterministic witnesses",
-      "auditFirm": "Trail of Bits",
-      "publishDate": "2023-12-10",
-      "reportSource": {
-        "name": "Nullity00",
-        "url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf"
+  {
+    "title": "ModGadget is underconstrained and allows incorrect MULMOD operations to be proven",
+    "source": "Trail Of Bits",
+    "date": "2023-12-10",
+    "protocol": "Scroll ZkEVM",
+    "protocol_type": "ZKEVM",
+    "tags": [],
+    "frameworks": [],
+    "reported_by": ["Filipe Casal", "Joe Doyle", "Opal Wright", "Will Song"],
+    "scope": [
+      {
+        "name": "zkevm-circuits",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/e8bcb23e1f303bd6e0dc52924b0ed85710b8a016",
+        "commit_hash": "e8bcb23e1f303bd6e0dc52924b0ed85710b8a016"
+      },
+      {
+        "name": "snark-verifier code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/snark-verifier/pull/2",
+        "commit_hash": "a3d0a5ab48522bc533686da3ea8400282c91f536"
+      },
+      {
+        "name": "modexp",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/misc-precompiled-circuit/tree/05725ec61d52d29a063395b0a1130467bee0d2f1",
+        "commit_hash": "05725ec61d52d29a063395b0a1130467bee0d2f1"
+      },
+      {
+        "name": "halo2-lib code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/halo2-lib/pull/8",
+        "commit_hash": "a805052->b1d1567"
+      },
+      {
+        "name": "Bytecode circuit",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/44000e55eddaec42da958f2555d9bdeec8b865c2/zkevm-circuits/src/bytecode_circuit",
+        "commit_hash": "44000e55eddaec42da958f2555d9bdeec8b865c2"
       }
-    },
-    {
-      "title": "TheRlpU64Gadget is underconstrained when is_lt_128 is false",
-      "source": "Trail Of Bits",
-      "date": "2023-12-10",
-      "protocol": "Scroll ZkEVM",
-      "protocol_type": "ZKEVM",
-      "tags": [],
-      "frameworks": [],
-      "reported_by": ["Filipe Casal", "Joe Doyle", "Opal Wright", "Will Song"],
-      "scope": [
-        {
-          "name": "zkevm-circuits",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/e8bcb23e1f303bd6e0dc52924b0ed85710b8a016",
-          "commit_hash": "e8bcb23e1f303bd6e0dc52924b0ed85710b8a016"
-        },
-        {
-          "name": "snark-verifier code diff",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/snark-verifier/pull/2",
-          "commit_hash": "a3d0a5ab48522bc533686da3ea8400282c91f536"
-        },
-        {
-          "name": "halo2-lib code diff",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/halo2-lib/pull/8",
-          "commit_hash": "a805052->b1d1567"
-        },
-        {
-          "name": "Bytecode circuit",
-          "description": "",
-          "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/44000e55eddaec42da958f2555d9bdeec8b865c2/zkevm-circuits/src/bytecode_circuit",
-          "commit_hash": "44000e55eddaec42da958f2555d9bdeec8b865c2"
-        }
-      ],
-      "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
-      "severity": "high",
-      "difficulty": "medium",
-      "type": "data validation",
-      "finding_id": "TOB-SCROLL-2",
-      "target_file": "zkevm-circuits/src/evm_circuit/util/math_gadget/rlp.rs",
-      "content": [
-        {
-          "type": "text",
-          "text": "The RlpU64Gadget constrains witness values to match the output of a correct RLP encoding. Since the length and value of the RLP-encoded value depend on the value being less than 128, the is_lt_128 flag is part of the witness. A range check ensures that if is_lt_128 is true, then the value is actually below 128. However, there is no constraint ensuring that value is above 127 when is_lt_128 is false:"
-        },
-        {
-          "type": "code",
-          "code": "let is_lt_128 = cb.query_bool();\n cb.condition(is_lt_128.expr(), |cb| {\n cb.range_lookup(value, 128);\n });",
-          "language": "rust",
-          "description": "Figure 2.1: evm_circuit/util/math_gadget/rlp.rs#L67-L70"
-        },
-        {
-          "type": "text",
-          "text": "This means that a malicious prover could have a value smaller than 128 but set is_lt_128 to false, leading to an incorrect length and RLP-encoded output:"
-        }
-      ],
-      "impact": "A malicious prover interprets two bytes in an RLP-serialized data structure as a value less than 128, causing later fields in the data structure to be deserialized starting at an incorrect offset. The prover then uses this incorrectly deserialized data structure to prove an invalid state transition, leading to state divergence and potential loss of funds.",
-      "recommendation": "Short term, add a constraint to ensure that the value is above 127 when is_lt_128 is false. Long term, add negative tests ensuring that mismatched witnesses value and is_lt_128 do not satisfy the circuit constraints",
-      "auditFirm": "Trail of Bits",
-      "publishDate": "2023-12-10",
-      "reportSource": {
-        "name": "Nullity00",
-        "url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf"
+    ],
+    "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
+    "severity": "high",
+    "difficulty": "medium",
+    "type": "data validation",
+    "finding_id": "TOB-SCROLL-1",
+    "target_file": "zkevm-circuits/src/evm_circuit/util/math_gadget/modulo.rs",
+    "content": [
+      {
+        "type": "text",
+        "text": "The ModGadget circuit computes the modulo operation, a mod n, with the caveat that the result should be 0 whenever n is 0. However, an incorrect constraint allows a proof that that a mod 0 == a. This causes incorrect EVM semantics for the MULMOD opcode, allowing an attacker to prove that ab mod 0 == ab. According to the EVM semantics, the correct result is 0"
+      },
+      {
+        "type": "text",
+        "text": "The ModGadget circuit implementation uses a witness value, a_or_zero, that is supposed to take the value of a when n is nonzero or 0 when n is 0. The code comments indicate that the following constraint ensures that a_or_zero satisfies this condition, but the constraint also allows the case a_or_zero == a and n == 0:"
+      },
+      {
+        "type": "code",
+        "code": "/// Constraints for the words a, n, r:\n/// a mod n = r, if n!=0\n/// r = 0, if n==0\n///\n/// We use the auxiliary a_or_zero word, whose value is constrained to be:\n/// a_or_zero = a if n!=0, 0 if n==0. This allows to use the equation\n/// k * n + r = a_or_zero to verify the modulus, which holds with r=0 in the\n/// case of n=0. Unlike the usual k * n + r = a, which forces r = a when n=0,\n/// this equation assures that r<n or r=n=0.\n...\nimpl<F: Field> ModGadget<F> {\n  pub(crate) fn construct(cb: &mut ConstraintBuilder<F>, words: [&util::Word<F>;\n    3]) -> Self {\n    let (a, n, r) = (words[0], words[1], words[2]);\n    let k = cb.query_word_rlc();\n    let a_or_zero = cb.query_word_rlc();\n    let n_is_zero = IsZeroGadget::construct(cb, sum::expr(&n.cells));\n    let a_or_is_zero = IsZeroGadget::construct(cb, sum::expr(&a_or_zero.cells));\n    let mul_add_words = MulAddWordsGadget::construct(cb, [&k, n, r,\n      &a_or_zero]);\n    let eq = IsEqualGadget::construct(cb, a.expr(), a_or_zero.expr());\n    let lt = LtWordGadget::construct(cb, r, n);\n    // Constrain the aux variable a_or_zero to be =a or =0 if n==0:\n    // (a == a_or_zero) ^ (n == 0 & a_or_zero == 0)\n    cb.add_constraint(\n      \" (1 - (a == a_or_zero)) * ( 1 - (n == 0) * (a_or_zero == 0)\",\n      (1.expr() - eq.expr()) * (1.expr() - n_is_zero.expr() *\n      a_or_is_zero.expr()),\n    );\n  }",
+        "language": "rust",
+        "description": "Figure 1.1: evm_circuit/util/math_gadget/modulo.rs#L10-L44"
+      },
+      {
+        "type": "text",
+        "text": "To correctly constrain the a_or_zero variable, rewrite the constraint as the following: [1 - ((n==0)*(a_or_zero==0) + (1 - n==0) * (a_or_zero == a)))] == 0 This constraint results in the following truth table:"
+      },
+      {
+        "type": "text",
+        "text": "Figure 1.2 shows how ModGadget is used to constrain the results of the MULMOD opcode. Since the constraints are satisfied by setting a_reduced == a instead of a_reduced == 0, when 𝑎 · 𝑏 < 2^256 , the result can be set to by setting . k1 = k2 = d = 0, e = r =  a . b"
+      },
+      {
+        "type": "code",
+        "code": "// 1. k1 * n + a_reduced == a\nlet modword = ModGadget::construct(cb, [&a, &n, &a_reduced]);\n// 2. a_reduced * b + 0 == d * 2^256 + e\nlet mul512_left = MulAddWords512Gadget::construct(cb, [&a_reduced, &b, &d, &e],\n  None);\n// 3. k2 * n + r == d * 2^256 + e\nlet mul512_right = MulAddWords512Gadget::construct(cb, [&k, &n, &d, &e], Some(&r));\n// (r < n ) or n == 0\nlet n_is_zero = IsZeroGadget::construct(cb, sum::expr(&n.cells));\nlet lt = LtWordGadget::construct(cb, &r, &n);\ncb.add_constraint(\n  \" (1 - (r < n) - (n==0)) \",\n  1.expr() - lt.expr() - n_is_zero.expr(),\n);",
+        "language": "rust",
+        "description": "Figure 1.2: zkevm-circuits/src/evm_circuit/execution/mulmod.rs#58–73"
       }
+    ],
+    "impact": "A malicious prover interprets two bytes in an RLP-serialized data structure as a value less than 128, causing later fields in the data structure to be deserialized starting at an incorrect offset. The prover submits that proof, the results of which will not match the correct EVM semantics, leading to state divergence and loss of funds.",
+    "recommendation": "Short term, fix the constraint; extend the assign function to receive the a_or_zero witness. Add tests for this finding. Long term, add determinacy testing to any gadgets that constrain nondeterministic witnesses",
+    "auditFirm": "Trail of Bits",
+    "publishDate": "2023-12-10",
+    "reportSource": {
+      "name": "Nullity00",
+      "url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf"
     }
+  },
+  {
+    "title": "TheRlpU64Gadget is underconstrained when is_lt_128 is false",
+    "source": "Trail Of Bits",
+    "date": "2023-12-10",
+    "protocol": "Scroll ZkEVM",
+    "protocol_type": "ZKEVM",
+    "tags": [],
+    "frameworks": [],
+    "reported_by": ["Filipe Casal", "Joe Doyle", "Opal Wright", "Will Song"],
+    "scope": [
+      {
+        "name": "zkevm-circuits",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/e8bcb23e1f303bd6e0dc52924b0ed85710b8a016",
+        "commit_hash": "e8bcb23e1f303bd6e0dc52924b0ed85710b8a016"
+      },
+      {
+        "name": "snark-verifier code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/snark-verifier/pull/2",
+        "commit_hash": "a3d0a5ab48522bc533686da3ea8400282c91f536"
+      },
+      {
+        "name": "halo2-lib code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/halo2-lib/pull/8",
+        "commit_hash": "a805052->b1d1567"
+      },
+      {
+        "name": "Bytecode circuit",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/44000e55eddaec42da958f2555d9bdeec8b865c2/zkevm-circuits/src/bytecode_circuit",
+        "commit_hash": "44000e55eddaec42da958f2555d9bdeec8b865c2"
+      }
+    ],
+    "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
+    "severity": "high",
+    "difficulty": "medium",
+    "type": "data validation",
+    "finding_id": "TOB-SCROLL-2",
+    "target_file": "zkevm-circuits/src/evm_circuit/util/math_gadget/rlp.rs",
+    "content": [
+      {
+        "type": "text",
+        "text": "The RlpU64Gadget constrains witness values to match the output of a correct RLP encoding. Since the length and value of the RLP-encoded value depend on the value being less than 128, the is_lt_128 flag is part of the witness. A range check ensures that if is_lt_128 is true, then the value is actually below 128. However, there is no constraint ensuring that value is above 127 when is_lt_128 is false:"
+      },
+      {
+        "type": "code",
+        "code": "let is_lt_128 = cb.query_bool();\n cb.condition(is_lt_128.expr(), |cb| {\n cb.range_lookup(value, 128);\n });",
+        "language": "rust",
+        "description": "Figure 2.1: evm_circuit/util/math_gadget/rlp.rs#L67-L70"
+      },
+      {
+        "type": "text",
+        "text": "This means that a malicious prover could have a value smaller than 128 but set is_lt_128 to false, leading to an incorrect length and RLP-encoded output:"
+      }
+    ],
+    "impact": "A malicious prover interprets two bytes in an RLP-serialized data structure as a value less than 128, causing later fields in the data structure to be deserialized starting at an incorrect offset. The prover then uses this incorrectly deserialized data structure to prove an invalid state transition, leading to state divergence and potential loss of funds.",
+    "recommendation": "Short term, add a constraint to ensure that the value is above 127 when is_lt_128 is false. Long term, add negative tests ensuring that mismatched witnesses value and is_lt_128 do not satisfy the circuit constraints",
+    "auditFirm": "Trail of Bits",
+    "publishDate": "2023-12-10",
+    "reportSource": {
+      "name": "Nullity00",
+      "url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf"
+    }
+  },
+  {
+    "title": "The BLOCKHASH opcode is underconstrained and allows the hash of any block to be computed",
+    "source": "Trail Of Bits",
+    "date": "2023-12-10",
+    "protocol": "Scroll ZkEVM",
+    "protocol_type": "ZKEVM",
+    "tags": [],
+    "frameworks": [],
+    "reported_by": ["Filipe Casal", "Joe Doyle", "Opal Wright", "Will Song"],
+    "scope": [
+      {
+        "name": "zkevm-circuits",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/e8bcb23e1f303bd6e0dc52924b0ed85710b8a016",
+        "commit_hash": "e8bcb23e1f303bd6e0dc52924b0ed85710b8a016"
+      },
+      {
+        "name": "snark-verifier code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/snark-verifier/pull/2",
+        "commit_hash": "a3d0a5ab48522bc533686da3ea8400282c91f536"
+      },
+      {
+        "name": "modexp",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/misc-precompiled-circuit/tree/05725ec61d52d29a063395b0a1130467bee0d2f1",
+        "commit_hash": "05725ec61d52d29a063395b0a1130467bee0d2f1"
+      },
+      {
+        "name": "halo2-lib code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/halo2-lib/pull/8",
+        "commit_hash": "a805052->b1d1567"
+      },
+      {
+        "name": "Bytecode circuit",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/44000e55eddaec42da958f2555d9bdeec8b865c2/zkevm-circuits/src/bytecode_circuit",
+        "commit_hash": "44000e55eddaec42da958f2555d9bdeec8b865c2"
+      }
+    ],
+    "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
+    "severity": "high",
+    "difficulty": "medium",
+    "type": "data validation",
+    "finding_id": "TOB-SCROLL-3",
+    "target_file": "zkevm-circuits/src/evm_circuit/util/math_gadget/rlp.rs",
+    "content": [
+      {
+        "type": "text",
+        "text": "The BLOCKHASH opcode returns the hash of the block identified by the stack argument, block_number, provided that it is one of the 256 most recent complete blocks. However, the implementation allows a malicious prover to provide a non-zero result even when the provided block number is not among the 256 most recent blocks, contradicting the EVM specification"
+      },
+      {
+        "type": "text",
+        "text": "To validate that block_number is among the 256 most recent blocks, the implementation checks that current_block_number - block_number < 257, where current_block_number is supposed to be the block number of the current block. However, current_block_number is unconstrained and could take any value."
+      },
+      {
+        "type": "code",
+        "code": "impl<F: Field> ExecutionGadget<F> for BlockHashGadget<F> {\n    const NAME: &'static str = \"BLOCKHASH\";\n    const EXECUTION_STATE: ExecutionState = ExecutionState::BLOCKHASH;\n\n    fn configure(cb: &mut ConstraintBuilder<F>) -> Self {\n        let current_block_number = cb.query_cell();\n        let block_number = WordByteCapGadget::construct(cb, current_block_number.expr());\n        cb.stack_pop(block_number.original_word());\n\n        // FIXME\n        // cb.block_lookup(\n        //     BlockContextFieldTag::Number.expr(),\n        //     cb.curr.state.block_number.expr(),\n        //     current_block_number.expr(),\n        // );\n\n        let block_hash = cb.query_word_rlc();\n        let diff_lt = LtGadget::construct(\n            cb,\n            current_block_number.expr(),\n            (NUM_PREV_BLOCK_ALLOWED + 1).expr() + block_number.valid_value(),\n        );\n        // ... You can continue indenting the rest of your code here.\n    }\n}",
+        "language": "rust",
+        "description": "Figure 3.1: zkevm-circuits/src/evm_circuit/execution/blockhash.rs#L33-L4"
+      },
+      {
+        "type": "text",
+        "text": "A malicious prover could provide an invalid current_block_number and return the hash of any block present in the block lookup table, independent of its block number."
+      }
+    ],
+    "impact": "A malicious prover generates a proof of execution for a transaction involving the BLOCKHASH opcode that results in a nonzero hash for an older block. The prover submits that proof, the results of which will not match the correct EVM semantics, leading to state divergence and loss of funds.",
+    "recommendation": "Short term, add the missing lookup constraint for the current_block_number witness. Long term, track and triage FIXME and TODO items in a centralized issue tracking system, such as GitHub issues. Add failing tests when security-relevant TODO items are identified.",
+    "auditFirm": "Trail of Bits",
+    "publishDate": "2023-12-10",
+    "reportSource": {
+      "name": "Nullity00",
+      "url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf"
+    }
+  },
+  {
+    "title": "zkevm-circuits crate depends on an outdated version of halo2-ecc",
+    "source": "Trail Of Bits",
+    "date": "2023-12-10",
+    "protocol": "Scroll ZkEVM",
+    "protocol_type": "ZKEVM",
+    "tags": [],
+    "frameworks": [],
+    "reported_by": ["Filipe Casal", "Joe Doyle", "Opal Wright", "Will Song"],
+    "scope": [
+      {
+        "name": "zkevm-circuits",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/e8bcb23e1f303bd6e0dc52924b0ed85710b8a016",
+        "commit_hash": "e8bcb23e1f303bd6e0dc52924b0ed85710b8a016"
+      },
+      {
+        "name": "snark-verifier code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/snark-verifier/pull/2",
+        "commit_hash": "a3d0a5ab48522bc533686da3ea8400282c91f536"
+      },
+      {
+        "name": "modexp",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/misc-precompiled-circuit/tree/05725ec61d52d29a063395b0a1130467bee0d2f1",
+        "commit_hash": "05725ec61d52d29a063395b0a1130467bee0d2f1"
+      },
+      {
+        "name": "halo2-lib code diff",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/halo2-lib/pull/8",
+        "commit_hash": "a805052->b1d1567"
+      },
+      {
+        "name": "Bytecode circuit",
+        "description": "",
+        "repository": "https://github.com/scroll-tech/zkevm-circuits/tree/44000e55eddaec42da958f2555d9bdeec8b865c2/zkevm-circuits/src/bytecode_circuit",
+        "commit_hash": "44000e55eddaec42da958f2555d9bdeec8b865c2"
+      }
+    ],
+    "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
+    "severity": "medium",
+    "difficulty": "medium",
+    "type": "Patching",
+    "finding_id": "TOB-SCROLL-4",
+    "target_file": "zkevm-circuits/{Cargo.toml,src/tx_circuit/sign_verify.rs",
+    "content": [
+      {
+        "type": "text",
+        "text": "The zkevm-circuits crate depends on the halo2-ecc library in Scroll's fork of halo2-lib, which provides halo2 circuits for elliptic curve and finite field operations. As illustrated in figure 4.1, this crate depends on the halo2-ecc-snark-verifier-0323 tag, which currently points to commit d24871338ade7dd56362de517b718ba14f3e7b90"
+      },
+      {
+        "type": "code",
+        "code": "halo2-ecc = { git = \"https://github.com/scroll-tech/halo2-lib\", branch = \"halo2-ecc-snark-verifier-0323\", default-features=false, features=[\"halo2-pse\",\"display\"] }.",
+        "language": "rust",
+        "description": "Figure 4.1:zkevm-circuits/Cargo.toml#32–33"
+      },
+      {
+        "type": "text",
+        "text": "The Scroll fork of halo2-lib is closely related to the upstream halo2-lib library. In particular, the v0.3.0 version of halo2-ecc (commit c31a30bcaff384b0c3aa7c823dd343f5c85da69e) has a common ancestor commit of 4338af81bb2de4f278467e5c484e067c064cc66b with the Scroll version"
+      },
+      {
+        "type": "text",
+        "text": "The upstream library has various fixes and improvements that should be incorporated. Some notable existing fixes include the following: FpChip::assert_equal has had a soundness-related typo fixed (PR#18) ecdsa_verify_no_pubkey_check no longer rejects certain valid signatures (PR#36). While FpChip::assert_equal does not currently appear to be used, the SignVerifyChip circuit uses the ecdsa_verify_no_pubkey_check function, as shown in figure 4.3."
+      },
+      {
+        "type": "code",
+        "code": "// returns the verification result of ecdsa signature\n// WARNING: this circuit does not enforce the returned value to be true\n// make sure the caller checks this result!\nlet ecdsa_is_valid = ecdsa_verify_no_pubkey_check::<F, Fp, Fq, Secp256k1Affine>(\n    &ecc_chip.field_chip,\n    ctx,\n    &pk_assigned,\n    &integer_r,\n    &integer_s,\n    &msg_hash,\n    4,\n    4\n);",
+        "language": "rust",
+        "description": "Figure 4.3:zkevm-circuits/src/tx_circuit/sign_verify.rs#386–39"
+      },
+      {
+        "type": "text",
+        "text": "SignVerify is then used to check signatures on EVM transactions, as shown in figure 4.4, and because of the pre-patch behavior, an adversary can generate a correctly signed transaction that will nevertheless fail signature verification"
+      },
+      {
+        "type": "code",
+        "code": "#[cfg(feature = \"enable-sign-verify\")] { let assigned_sig_verifs = self.sign_verify .assign(&config.sign_verify, layouter, &sign_datas, challenges)?; self.sign_verify.assert_sig_is_valid( &config.sign_verify, layouter, assigned_sig_verifs.as_slice(), )?; self.assign( config, challenges, layouter, assigned_sig_verifs, Vec::new(), &padding_txs, )?; }",
+        "language": "rust",
+        "description": "Figure 4.4:zkevm-circuits/src/tx_circuit.rs#1804–1822"
+      }
+    ],
+    "impact": "An adversary creates a transaction with a valid signature that the old implementation would reject and submits it to Ethereum. Ethereum accepts the transaction, but the Scroll zkEVM is unable to accept it, stalling the zkEVM and creating a denial of service that may freeze user funds.",
+    "recommendation": "Short term, review the security implications of this outdated version of halo2-ecc on the zkEVM codebase. Then, either update to a more recent version of halo2-lib that incorporates upstream fixes or backport those fixes to Scroll's fork. Long term, keep all dependencies up to date whenever possible. For any dependencies that have been forked from the upstream version, develop a plan to port any upstream security updates onto that fork.",
+    "auditFirm": "Trail of Bits",
+    "publishDate": "2023-12-10",
+    "reportSource": {
+      "name": "Nullity00",
+      "url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf"
+    }
+  }
 ]
