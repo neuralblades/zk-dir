@@ -22,23 +22,47 @@ const importFromJSON = async (jsonData, userId) => {
 
     for (const item of jsonData) {
       try {
+        // Validate and normalize severity - case sensitive matching for enum values
+        let severity = (item.severity?.toLowerCase() || 'n/a');
+        // Map to the correct case as defined in your schema
+        if (severity === 'n/a') severity = 'N/A';
+        if (severity === 'informational') severity = 'informational';
+        if (severity === 'low') severity = 'low';
+        if (severity === 'medium') severity = 'medium';
+        if (severity === 'high') severity = 'high';
+        if (severity === 'critical') severity = 'critical';
+        
+        // Validate and normalize difficulty - case sensitive matching for enum values
+        let difficulty = (item.difficulty?.toLowerCase() || 'n/a');
+        // Map to the correct case as defined in your schema
+        if (difficulty === 'n/a') difficulty = 'N/A';
+        if (difficulty === 'low') difficulty = 'low';
+        if (difficulty === 'medium') difficulty = 'medium';
+        if (difficulty === 'high') difficulty = 'high';
+
+        // Process content (if it's an array of objects)
+        let contentString = item.content;
+        if (Array.isArray(item.content)) {
+          contentString = processContent(item.content);
+        }
+
         // Create the post object with required fields
         const postData = {
           userId: userId, // Admin user ID
           title: item.title,
-          content: item.content || '', // Handle HTML content if needed
+          content: contentString, 
           slug: generateSlug(item.title),
-          category: item.category || 'vulnerabilities',
           protocol: {
             name: item.protocol?.name || item.protocol || '',
             type: (item.protocol?.type || item.protocol_type || 'OTHER').toUpperCase()
           },
           source: item.source || '',
-          severity: item.severity?.toLowerCase() || 'medium',
-          difficulty: item.difficulty?.toLowerCase() || 'medium',
+          severity: severity,
+          difficulty: difficulty,
           tags: item.tags || [],
           frameworks: item.frameworks || [],
           reported_by: item.reported_by || [],
+          codeLanguage: item.codeLanguage || '',
           
           // Format scope field according to the schema
           scope: Array.isArray(item.scope) 
@@ -60,7 +84,7 @@ const importFromJSON = async (jsonData, userId) => {
           
           // Add reportSource if available
           reportSource: item.reportSource || {
-            name: item.auditFirm || item.source || 'Independent Researcher',
+            name: item.source || item.auditFirm || 'Independent Researcher',
             url: item.report_url || ''
           },
           
@@ -97,7 +121,6 @@ const importFromJSON = async (jsonData, userId) => {
     };
   }
 };
-
 // Import route handler
 export const handleImport = async (req, res) => {
   try {
