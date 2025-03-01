@@ -58,10 +58,7 @@ const CustomTable = ({ title, data, columns, link }) => (
                 )}
                 {column === 'Username' && item.username}
                 {column === 'Post Title' && item.title}
-                {column === 'Category' && item.category}
-                {column === 'Comment content' && (
-                  <p className='line-clamp-2'>{item.content}</p>
-                )}
+                {column === 'Protocol' && (item.protocol?.name || 'N/A')}
                 {column === 'Likes' && item.numberOfLikes}
               </td>
             ))}
@@ -129,7 +126,7 @@ export default function DashboardComp() {
         <CustomTable 
           title="Recent posts" 
           data={posts} 
-          columns={['Post image', 'Post Title', 'Category']} 
+          columns={['Post image', 'Post Title', 'Protocol']} 
           link='/dashboard?tab=posts' 
         />
       </div>
