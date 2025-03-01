@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/monokai-sublime.css';
+import 'highlight.js/styles/atom-one-dark.css'; // Changed to atom-one-dark for better syntax highlighting
 import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../firebase';
 import { CircularProgressbar } from 'react-circular-progressbar';
@@ -22,7 +22,6 @@ export default function UpdatePost() {
   const [uploadError, setUploadError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    category: 'uncategorized',
     content: '',
     image: '',
     publishDate: new Date().toISOString().split('T')[0],
@@ -36,8 +35,8 @@ export default function UpdatePost() {
       type: 'OTHER'
     },
     source: '',
-    severity: 'medium',
-    difficulty: 'medium',
+    severity: 'N/A',
+    difficulty: 'N/A',
     tags: [],
     frameworks: [],
     reported_by: [],
@@ -62,7 +61,6 @@ export default function UpdatePost() {
   const { currentUser } = useSelector((state) => state.user);
 
   // Fetch post data
-  // Replace your existing fetchPost function with this one
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -81,7 +79,6 @@ export default function UpdatePost() {
           ...post,
           // Ensure required fields have defaults
           title: post.title || '',
-          category: post.category || 'uncategorized',
           content: post.content || '',
           image: post.image || '',
           
@@ -118,9 +115,9 @@ export default function UpdatePost() {
               description: ''
             }],
           
-          // Other fields with defaults
-          severity: post.severity || 'medium',
-          difficulty: post.difficulty || 'medium',
+          // Other fields with defaults matching schema enums
+          severity: post.severity || 'N/A',
+          difficulty: post.difficulty || 'N/A',
           finding_id: post.finding_id || '',
           target_file: post.target_file || '',
           impact: post.impact || '',
@@ -273,6 +270,10 @@ export default function UpdatePost() {
       ['code-block'],
       ['clean'],
     ],
+    clipboard: {
+      // Preserve formatting when pasting code
+      matchVisual: false,
+    }
   }), []);
 
   const formats = [
@@ -284,7 +285,7 @@ export default function UpdatePost() {
     <div className="p-3 max-w-3xl mx-auto min-h-screen">
       <h1 className="text-center text-3xl my-7 font-semibold">Update ZK Bug Report</h1>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        {/* Title and Category */}
+        {/* Title */}
         <div className="flex flex-col gap-4 sm:flex-row justify-between">
           <input
             type="text"
@@ -294,16 +295,6 @@ export default function UpdatePost() {
             value={formData.title || ""}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
           />
-          <select
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.category || ""}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-          >
-            <option value="uncategorized">Select a category</option>
-            <option value="vulnerabilities">Vulnerabilities</option>
-            <option value="bugs">Bugs</option>
-            <option value="optimizations">Optimizations</option>
-          </select>
         </div>
 
         {/* Publish Date */}
@@ -336,7 +327,7 @@ export default function UpdatePost() {
                 id="reportSourceName"
                 placeholder="e.g., Nullity00"
                 className="w-full border p-2 bg-zinc-800 rounded-md"
-                value={formData.reportSource.name}
+                value={formData.reportSource?.name || ""}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
@@ -354,7 +345,7 @@ export default function UpdatePost() {
                 id="reportSourceUrl"
                 placeholder="https://..."
                 className="w-full border p-2 bg-zinc-800 rounded-md"
-                value={formData.reportSource.url}
+                value={formData.reportSource?.url || ""}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
@@ -375,7 +366,7 @@ export default function UpdatePost() {
               id="auditFirm"
               placeholder="Audit Firm Name"
               className="flex-1 border p-2 bg-zinc-800 rounded-md"
-              value={formData.auditFirm}
+              value={formData.auditFirm || ""}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, auditFirm: e.target.value }))
               }
@@ -413,9 +404,11 @@ export default function UpdatePost() {
         <div className="flex gap-4">
           <select
             className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.severity || "medium"}
+            value={formData.severity || "N/A"}
             onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
           >
+            <option value="N/A">No Severity</option>
+            <option value="informational">Informational</option>
             <option value="low">Low Severity</option>
             <option value="medium">Medium Severity</option>
             <option value="high">High Severity</option>
@@ -423,9 +416,10 @@ export default function UpdatePost() {
           </select>
           <select
             className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.difficulty || "medium"}
+            value={formData.difficulty || "N/A"}
             onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
           >
+            <option value="N/A">No Difficulty</option>
             <option value="low">Low Difficulty</option>
             <option value="medium">Medium Difficulty</option>
             <option value="high">High Difficulty</option>
@@ -584,16 +578,18 @@ export default function UpdatePost() {
                 value={scope.description || ""}
                 onChange={(e) => handleScopeChange(index, 'description', e.target.value)}
               />
-              <button
-                type="button"
-                className="bg-red-500 text-white p-2 rounded-md mt-2"
-                onClick={() => setFormData(prev => ({
-                  ...prev,
-                  scope: prev.scope.filter((_, i) => i !== index)
-                }))}
-              >
-                Remove Scope
-              </button>
+              {formData.scope.length > 1 && (
+                <button
+                  type="button"
+                  className="bg-red-500 text-white p-2 rounded-md mt-2"
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    scope: prev.scope.filter((_, i) => i !== index)
+                  }))}
+                >
+                  Remove Scope
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -679,7 +675,7 @@ export default function UpdatePost() {
           placeholder="Write your detailed bug description..."
           modules={modules}
           formats={formats}
-          className="h-72 mb-12"
+          className="h-72 mb-12 bg-zinc-800"
           required
           onChange={(value) =>
             setFormData((prev) => ({ ...prev, content: value }))
