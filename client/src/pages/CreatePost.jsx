@@ -21,7 +21,6 @@ export default function CreatePost() {
   const [uploadError, setUploadError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    category: 'uncategorized',
     content: '',
     image: '',
     // ZK Bug specific fields
@@ -36,8 +35,8 @@ export default function CreatePost() {
       type: 'OTHER'
     },
     source: '',
-    severity: 'medium',
-    difficulty: 'medium',
+    severity: 'N/A',
+    difficulty: 'N/A',
     tags: [],
     frameworks: [],
     reported_by: [],
@@ -248,7 +247,7 @@ export default function CreatePost() {
     <div className="p-3 max-w-3xl mx-auto min-h-screen">
       <h1 className="text-center text-3xl my-7 font-semibold">Create a ZK Bug Report</h1>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        {/* Title and Category */}
+        {/* Title */}
         <div className="flex flex-col gap-4 sm:flex-row justify-between">
           <input
             type="text"
@@ -258,16 +257,6 @@ export default function CreatePost() {
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
           />
-          <select
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.category}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-          >
-            <option value="uncategorized">Select a category</option>
-            <option value="vulnerabilities">Vulnerabilities</option>
-            <option value="bugs">Bugs</option>
-            <option value="optimizations">Optimizations</option>
-          </select>
         </div>
         
         {/* Publish Date */}
@@ -379,6 +368,8 @@ export default function CreatePost() {
             value={formData.severity}
             onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
           >
+            <option value="N/A">No Severity</option>
+            <option value="informational">Informational</option>
             <option value="low">Low Severity</option>
             <option value="medium">Medium Severity</option>
             <option value="high">High Severity</option>
@@ -389,6 +380,7 @@ export default function CreatePost() {
             value={formData.difficulty}
             onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
           >
+            <option value="N/A">No Difficulty</option>
             <option value="low">Low Difficulty</option>
             <option value="medium">Medium Difficulty</option>
             <option value="high">High Difficulty</option>
