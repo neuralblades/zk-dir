@@ -82,7 +82,7 @@ export default function PostCard({ post, onClick }) {
 
       {/* Report Source Link */}
       {post.reportSource?.name && (
-        <div className="mt-2 text-sm">
+        <div className="mt-2 text-sm mb-2">
           <span className="text-gray-400">Source: </span>
           {post.reportSource.url ? (
             <a
@@ -102,29 +102,15 @@ export default function PostCard({ post, onClick }) {
 
 
       {/* Tags Section */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {/* Category */}
-        <span className="px-2 py-1 bg-zinc-900 text-xs rounded-full">
-          {post.category}
-        </span>
-
-        {/* Protocol */}
-        {post.protocol?.name && (
-          <span className="px-2 py-1 bg-blue-900 text-xs rounded-full">
-            {post.protocol.name}
-          </span>
-        )}
-
+      <div className="flex flex-wrap gap-2 mb-2">
         {/* Protocol Type */}
         {post.protocol?.type && (
           <span className="px-2 py-1 bg-indigo-900 text-xs rounded-full">
             {post.protocol.type}
           </span>
         )}
-      </div>
-
-      {/* Severity and Difficulty */}
-      <div className="flex flex-wrap gap-2">
+      
+        {/* Severity and Difficulty */}
         {post.severity && (
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(post.severity)}`}>
             {post.severity} severity
@@ -139,7 +125,7 @@ export default function PostCard({ post, onClick }) {
 
       {/* Tags and Frameworks */}
       {(post.tags?.length > 0 || post.frameworks?.length > 0) && (
-        <div className="flex flex-wrap gap-1 mt-3 text-xs">
+        <div className="flex flex-wrap gap-1 mb-2 text-xs">
           {post.tags?.map((tag, index) => (
             <span key={index} className="px-2 py-0.5 bg-zinc-800 rounded">
               #{tag}
@@ -155,7 +141,7 @@ export default function PostCard({ post, onClick }) {
 
       {/* Finding ID */}
       {post.finding_id && (
-        <div className="mt-3 text-xs text-gray-400">
+        <div className=" text-xs text-gray-400">
           ID: {post.finding_id}
         </div>
       )}
