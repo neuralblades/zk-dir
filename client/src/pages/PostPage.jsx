@@ -104,13 +104,32 @@ export default function PostPage() {
   // Helper function to get severity color
   const getSeverityColor = (severity) => {
     const colors = {
-      low: 'green',
-      medium: 'yellow',
-      high: 'orange',
-      critical: 'red'
+      'n/a': 'gray',
+      'informational': 'blue',
+      'low': 'green',
+      'medium': 'yellow',
+      'high': 'orange',
+      'critical': 'red'
     };
-    return colors[severity] || 'gray';
+    return colors[severity?.toLowerCase()] || 'gray';
   };
+
+  // Helper to make severity display more user-friendly
+  const formatSeverity = (severity) => {
+    if (!severity || severity.toLowerCase() === 'n/a') {
+      return 'Severity N/A';
+    }
+    return severity.toUpperCase() + ' Severity';
+  };
+
+  // Helper to make difficulty display more user-friendly
+  const formatDifficulty = (difficulty) => {
+    if (!difficulty || difficulty.toLowerCase() === 'n/a') {
+      return 'Difficulty N/A';
+    }
+    return difficulty.charAt(0).toUpperCase() + difficulty.slice(1) + ' difficulty';
+  };
+
 
   if (loading)
     return (
@@ -146,24 +165,26 @@ export default function PostPage() {
 
         {/* Meta Information */}
         <div className="flex flex-wrap justify-left gap-2 text-sm">
-          {post?.category && (
-            <span className="px-3 py-1 bg-zinc-800 rounded-full">
-              {post.category}
-            </span>
-          )}
           {post?.protocol?.name && (
             <span className="px-3 py-1 bg-zinc-800 rounded-full">
               {post.protocol.name} ({post.protocol.type})
             </span>
           )}
-          {post?.severity && (
-            <span className={`px-3 py-1 rounded-full bg-${getSeverityColor(post.severity)}-900 text-${getSeverityColor(post.severity)}-300`}>
-              {post.severity.toUpperCase()} Severity
+          {post?.codeLanguage && (  // Changed from language to codeLanguage
+            <span className="px-3 py-1 bg-blue-900/30 rounded-full flex items-center gap-1">
+              <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
+              {post.codeLanguage}
             </span>
           )}
-          {post?.difficulty && (
+          {post?.severity && post.severity.toLowerCase() !== 'n/a' && (
+            <span className={`px-3 py-1 rounded-full bg-${getSeverityColor(post.severity)}-900 text-${getSeverityColor(post.severity)}-300`}>
+              {formatSeverity(post.severity)}
+            </span>
+          )}
+
+          {post?.difficulty && post.difficulty.toLowerCase() !== 'n/a' && (
             <span className="px-3 py-1 bg-zinc-800 rounded-full">
-              {post.difficulty} difficulty
+              {formatDifficulty(post.difficulty)}
             </span>
           )}
         </div>
