@@ -16,11 +16,29 @@ export const create = async (req, res, next) => {
     .toLowerCase()
     .replace(/[^a-zA-Z0-9-]/g, '');
 
+  // Validate severity is within enum values
+  const validSeverities = ['N/A', 'informational', 'low', 'medium', 'high', 'critical'];
+  const severity = req.body.severity && validSeverities.includes(req.body.severity.toLowerCase()) 
+    ? req.body.severity.toLowerCase() 
+    : 'N/A';
+
+  // Validate difficulty is within enum values
+  const validDifficulties = ['N/A', 'low', 'medium', 'high'];
+  const difficulty = req.body.difficulty && validDifficulties.includes(req.body.difficulty.toLowerCase())
+    ? req.body.difficulty.toLowerCase()
+    : 'N/A';
+
+  // Ensure protocol type is valid
+  const validTypes = ['ZKEVM', 'ZK-ROLLUP', 'OTHER'];
+  const protocolType = req.body.protocol?.type && validTypes.includes(req.body.protocol.type)
+    ? req.body.protocol.type
+    : 'OTHER';
+
   const newPost = new Post({
     ...req.body,
     slug,
     userId: req.user.id,
-    // Initialize ZK-specific fields with defaults if not provided
+    // Initialize fields with defaults if not provided
     image: req.body.image || 'https://i.postimg.cc/rsrr3rH1/zk-logo.png',
     publishDate: req.body.publishDate || new Date(),
     reportSource: {
@@ -28,14 +46,16 @@ export const create = async (req, res, next) => {
       url: req.body.reportSource?.url || ''
     },
     auditFirm: req.body.auditFirm || 'Independent Researcher',
-    protocol: req.body.protocol || { name: '', type: 'OTHER' },
+    protocol: {
+      name: req.body.protocol?.name || '',
+      type: protocolType
+    },
     tags: req.body.tags || [],
     frameworks: req.body.frameworks || [],
     reported_by: req.body.reported_by || [],
     scope: req.body.scope || [],
-    severity: req.body.severity || 'medium',
-    difficulty: req.body.difficulty || 'medium',
-    date: req.body.date || new Date()
+    severity: severity,
+    difficulty: difficulty
   });
 
   try {
@@ -55,15 +75,14 @@ export const getposts = async (req, res, next) => {
     // Enhanced query builder with ZK-specific filters
     const query = {
       ...(req.query.userId && { userId: req.query.userId }),
-      ...(req.query.category && { category: req.query.category }),
       ...(req.query.slug && { slug: req.query.slug }),
       ...(req.query.postId && { _id: req.query.postId }),
       ...(req.query.auditFirm && { auditFirm: req.query.auditFirm }),
       ...(req.query.reportSource && { 'reportSource.name': req.query.reportSource }),
       ...(req.query.protocol && { 'protocol.name': req.query.protocol }),
       ...(req.query.protocolType && { 'protocol.type': req.query.protocolType }),
-      ...(req.query.severity && { severity: req.query.severity }),
-      ...(req.query.difficulty && { difficulty: req.query.difficulty }),
+      ...(req.query.severity && { severity: req.query.severity.toLowerCase() }),
+      ...(req.query.difficulty && { difficulty: req.query.difficulty.toLowerCase() }),
       ...(req.query.tags && { tags: { $in: req.query.tags.split(',') } }),
       ...(req.query.frameworks && { frameworks: { $in: req.query.frameworks.split(',') } }),
       ...(req.query.searchTerm && {
@@ -78,17 +97,6 @@ export const getposts = async (req, res, next) => {
         ],
       }),
     };
-
-    // Date range filter
-    if (req.query.startDate || req.query.endDate) {
-      query.publishDate = {};
-      if (req.query.startDate) {
-        query.publishDate.$gte = new Date(req.query.startDate);
-      }
-      if (req.query.endDate) {
-        query.publishDate.$lte = new Date(req.query.endDate);
-      }
-    }
 
     const posts = await Post.find(query)
       .sort({ updatedAt: sortDirection })
@@ -109,15 +117,18 @@ export const getposts = async (req, res, next) => {
       publishDate: { $gte: oneMonthAgo }
     });
 
-    // Add aggregated stats for ZK bugs
+    // Add aggregated stats for ZK bugs (updated to include all severity levels)
     const stats = await Post.aggregate([
       { $match: query },
       {
         $group: {
           _id: null,
+          totalCritical: { $sum: { $cond: [{ $eq: ['$severity', 'critical'] }, 1, 0] } },
           totalHigh: { $sum: { $cond: [{ $eq: ['$severity', 'high'] }, 1, 0] } },
           totalMedium: { $sum: { $cond: [{ $eq: ['$severity', 'medium'] }, 1, 0] } },
           totalLow: { $sum: { $cond: [{ $eq: ['$severity', 'low'] }, 1, 0] } },
+          totalInformational: { $sum: { $cond: [{ $eq: ['$severity', 'informational'] }, 1, 0] } },
+          totalNA: { $sum: { $cond: [{ $eq: ['$severity', 'N/A'] }, 1, 0] } },
           protocolCount: { $addToSet: '$protocol.name' },
         }
       }
@@ -128,11 +139,33 @@ export const getposts = async (req, res, next) => {
       totalPosts,
       lastMonthPosts,
       stats: stats[0] || {
+        totalCritical: 0,
         totalHigh: 0,
         totalMedium: 0,
         totalLow: 0,
+        totalInformational: 0,
+        totalNA: 0,
         protocolCount: []
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Add an endpoint to get available codeLanguages
+export const getLanguages = async (req, res, next) => {
+  try {
+    // Find all unique codeLanguages
+    const languages = await Post.distinct('codeLanguage');
+    
+    // Filter out empty values and sort
+    const validLanguages = languages
+      .filter(lang => lang && lang.trim())
+      .sort();
+    
+    res.status(200).json({
+      languages: validLanguages
     });
   } catch (error) {
     next(error);
@@ -155,33 +188,54 @@ export const updatepost = async (req, res, next) => {
   if (!req.user.isAdmin || req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to update this post'));
   }
+
   try {
+    // Validate severity is within enum values
+    const validSeverities = ['N/A', 'informational', 'low', 'medium', 'high', 'critical'];
+    const severity = req.body.severity && validSeverities.includes(req.body.severity.toLowerCase()) 
+      ? req.body.severity.toLowerCase() 
+      : 'N/A';
+
+    // Validate difficulty is within enum values
+    const validDifficulties = ['N/A', 'low', 'medium', 'high'];
+    const difficulty = req.body.difficulty && validDifficulties.includes(req.body.difficulty.toLowerCase())
+      ? req.body.difficulty.toLowerCase()
+      : 'N/A';
+
+    // Ensure protocol type is valid
+    const validTypes = ['ZKEVM', 'ZK-ROLLUP', 'OTHER'];
+    const protocolType = req.body.protocol?.type && validTypes.includes(req.body.protocol.type)
+      ? req.body.protocol.type
+      : 'OTHER';
+
     const updatedPost = await Post.findByIdAndUpdate(
       req.params.postId,
       {
         $set: {
           title: req.body.title,
           content: req.body.content,
-          category: req.body.category,
           image: req.body.image || 'https://i.postimg.cc/rsrr3rH1/zk-logo.png',
-          // Add ZK-specific field updates
-          publishDate: req.body.publishDate,
+          // Add ZK-specific field updates with validation
+          publishDate: req.body.publishDate || new Date(),
           reportSource: {
             name: req.body.reportSource?.name || '',
             url: req.body.reportSource?.url || ''
           },
-          auditFirm: req.body.auditFirm,
-          protocol: req.body.protocol,
-          tags: req.body.tags,
-          frameworks: req.body.frameworks,
-          reported_by: req.body.reported_by,
-          scope: req.body.scope,
-          severity: req.body.severity,
-          difficulty: req.body.difficulty,
-          finding_id: req.body.finding_id,
-          target_file: req.body.target_file,
-          impact: req.body.impact,
-          recommendation: req.body.recommendation
+          auditFirm: req.body.auditFirm || 'Independent Researcher',
+          protocol: {
+            name: req.body.protocol?.name || '',
+            type: protocolType
+          },
+          tags: req.body.tags || [],
+          frameworks: req.body.frameworks || [],
+          reported_by: req.body.reported_by || [],
+          scope: req.body.scope || [],
+          severity: severity,
+          difficulty: difficulty,
+          finding_id: req.body.finding_id || '',
+          target_file: req.body.target_file || '',
+          impact: req.body.impact || '',
+          recommendation: req.body.recommendation || ''
         },
       },
       { new: true }
@@ -219,33 +273,6 @@ export const getPostsByProtocol = async (req, res, next) => {
   }
 };
 
-export const getPostsByCategory = async (req, res, next) => {
-  try {
-    const { categoryName } = req.params;
-    const { page = 1, limit = 10 } = req.query;
-
-    const posts = await Post.find({
-      category: { $regex: new RegExp(categoryName, 'i') }
-    })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-
-    const total = await Post.countDocuments({
-      category: { $regex: new RegExp(categoryName, 'i') }
-    });
-
-    res.status(200).json({
-      posts,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / limit),
-      total
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const getPostStats = async (req, res, next) => {
   try {
     const stats = await Post.aggregate([
@@ -253,14 +280,14 @@ export const getPostStats = async (req, res, next) => {
         $group: {
           _id: null,
           totalPosts: { $sum: 1 },
+          severityCounts: {
+            $push: '$severity'
+          },
           protocolStats: {
             $push: {
               protocol: '$protocol.name',
               type: '$protocol.type'
             }
-          },
-          severityStats: {
-            $push: '$severity'
           },
           tagsStats: {
             $push: '$tags'
@@ -277,8 +304,65 @@ export const getPostStats = async (req, res, next) => {
           protocolTypes: {
             $setUnion: '$protocolStats.type'
           },
+          // Count each severity level
+          severityCounts: {
+            critical: { 
+              $size: { 
+                $filter: { 
+                  input: '$severityCounts', 
+                  as: 'severity', 
+                  cond: { $eq: ['$$severity', 'critical'] } 
+                } 
+              } 
+            },
+            high: { 
+              $size: { 
+                $filter: { 
+                  input: '$severityCounts', 
+                  as: 'severity', 
+                  cond: { $eq: ['$$severity', 'high'] } 
+                } 
+              } 
+            },
+            medium: { 
+              $size: { 
+                $filter: { 
+                  input: '$severityCounts', 
+                  as: 'severity', 
+                  cond: { $eq: ['$$severity', 'medium'] } 
+                } 
+              } 
+            },
+            low: { 
+              $size: { 
+                $filter: { 
+                  input: '$severityCounts', 
+                  as: 'severity', 
+                  cond: { $eq: ['$$severity', 'low'] } 
+                } 
+              } 
+            },
+            informational: { 
+              $size: { 
+                $filter: { 
+                  input: '$severityCounts', 
+                  as: 'severity', 
+                  cond: { $eq: ['$$severity', 'informational'] } 
+                } 
+              } 
+            },
+            na: { 
+              $size: { 
+                $filter: { 
+                  input: '$severityCounts', 
+                  as: 'severity', 
+                  cond: { $eq: ['$$severity', 'n/a'] } 
+                } 
+              } 
+            }
+          },
           severities: {
-            $setUnion: '$severityStats'
+            $setUnion: '$severityCounts'
           },
           tags: {
             $setUnion: {
@@ -297,6 +381,14 @@ export const getPostStats = async (req, res, next) => {
       totalPosts: 0,
       protocols: [],
       protocolTypes: [],
+      severityCounts: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+        informational: 0,
+        na: 0
+      },
       severities: [],
       tags: []
     });
