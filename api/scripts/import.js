@@ -8,15 +8,23 @@ import { importFromJSON } from '../utils/importData.js';
 dotenv.config();
 
 // Helper function to convert the complex content array to a string
+// and extract the primary language used in code blocks
 const processContent = (contentArray) => {
-  if (!contentArray || !Array.isArray(contentArray)) return '';
+  if (!contentArray || !Array.isArray(contentArray)) return { content: '', primaryLanguage: '' };
   
-  return contentArray.map(item => {
+  // Track languages used in code blocks
+  const languageCounts = {};
+  
+  const content = contentArray.map(item => {
     if (item.type === 'text') {
       return item.text;
     } else if (item.type === 'code') {
+      // Count language occurrences
+      if (item.language) {
+        languageCounts[item.language] = (languageCounts[item.language] || 0) + 1;
+      }
+      
       // Create properly formatted code blocks with language class
-      // This format will be compatible with highlight.js
       return `<pre><code class="language-${item.language || ''}">${
         // Escape HTML entities to prevent rendering issues
         item.code
@@ -27,6 +35,19 @@ const processContent = (contentArray) => {
     }
     return '';
   }).join('\n\n');
+  
+  // Determine the primary language (most frequently used)
+  let primaryLanguage = '';
+  if (Object.keys(languageCounts).length > 0) {
+    // Sort languages by frequency (highest first)
+    const sortedLanguages = Object.entries(languageCounts)
+      .sort((a, b) => b[1] - a[1]);
+    
+    primaryLanguage = sortedLanguages[0][0];
+    console.log(`Detected primary language for content: ${primaryLanguage}`);
+  }
+  
+  return { content, primaryLanguage };
 };
 
 const importData = async () => {
@@ -53,11 +74,18 @@ const importData = async () => {
     const jsonData = JSON.parse(fileContent);
     console.log(`Successfully loaded JSON with ${jsonData.length} items`);
 
-    // Process content field from array to markdown string
-    const processedData = jsonData.map(item => ({
-      ...item,
-      content: processContent(item.content)
-    }));
+    // Process content field from array to markdown string and extract language
+    const processedData = jsonData.map(item => {
+      const { content, primaryLanguage } = processContent(item.content);
+      
+      return {
+        ...item,
+        content,
+        // Use the language from the code blocks if not explicitly provided
+        // Changed from 'language' to 'codeLanguage'
+        codeLanguage: primaryLanguage || ''
+      };
+    });
     
     console.log(`Processed ${processedData.length} items for import`);
 
