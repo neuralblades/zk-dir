@@ -9,14 +9,11 @@ export default function Home() {
   const [sidebarData, setSidebarData] = useState({
     searchTerm: '',
     sort: '',
-    category: '',
     protocol: '',
     protocolType: '',
     severity: '',
     difficulty: '',
     tags: '',
-    startDate: '',
-    endDate: ''
   });
 
   // Rest of your state declarations remain the same
@@ -31,7 +28,6 @@ export default function Home() {
     totalPosts: 0,
     protocols: [],
     severities: [],
-    categories: []
   });
 
   const location = useLocation();
@@ -51,9 +47,8 @@ export default function Home() {
     
     // Update sidebar data from URL params
     const paramsToUpdate = [
-      'searchTerm', 'sort', 'category', 'protocol', 
+      'searchTerm', 'sort', 'protocol', 
       'protocolType', 'severity', 'difficulty', 'tags',
-      'startDate', 'endDate'
     ];
 
     const newSidebarData = {};
@@ -79,8 +74,7 @@ export default function Home() {
         setFilterStats({
           totalPosts: data.totalPosts || 0,
           protocols: data.stats?.protocols || [],
-          severities: data.stats?.severities || [],
-          categories: data.stats?.categories || []
+          severities: data.stats?.severities || []
         });
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -152,14 +146,11 @@ export default function Home() {
     setSidebarData({
       searchTerm: '',
       sort: '',
-      category: '',
       protocol: '',
       protocolType: '',
       severity: '',
       difficulty: '',
       tags: '',
-      startDate: '',
-      endDate: ''
     });
     navigate('/');
   };
@@ -271,6 +262,8 @@ export default function Home() {
                   className="bg-black text-white border border-zinc-900 rounded p-2"
                 >
                   <option value="">All</option>
+                  <option value="N/A">N/A</option>
+                  <option value="informational">Informational</option>
                   <option value="critical">Critical</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
@@ -286,28 +279,12 @@ export default function Home() {
                   className="bg-black text-white border border-zinc-900 rounded p-2"
                 >
                   <option value="">All</option>
+                  <option value="n/a">N/A</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
               </div>
-            </div>
-
-            {/* Category */}
-            <div className='flex flex-col'>
-              <label htmlFor="category" className='font-semibold mb-1 text-zinc-300'>Category:</label>
-              <select
-                id="category"
-                value={sidebarData.category}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              >
-                <option value="">All Categories</option>
-                <option value="vulnerabilities">Vulnerabilities</option>
-                <option value="bugs">Bugs</option>
-                <option value="optimizations">Optimizations</option>
-                <option value="uncategorized">Uncategorized</option>
-              </select>
             </div>
 
             {/* Tags */}
@@ -318,25 +295,6 @@ export default function Home() {
                 id="tags"
                 placeholder='Comma-separated tags'
                 value={sidebarData.tags}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              />
-            </div>
-
-            {/* Date Range */}
-            <div className='flex flex-col gap-2'>
-              <label className='font-semibold text-zinc-300'>Date Range:</label>
-              <input
-                type="date"
-                id="startDate"
-                value={sidebarData.startDate}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              />
-              <input
-                type="date"
-                id="endDate"
-                value={sidebarData.endDate}
                 onChange={handleChange}
                 className="bg-black text-white border border-zinc-900 rounded p-2"
               />
@@ -366,7 +324,6 @@ export default function Home() {
                 <p>Total Posts: {filterStats.totalPosts}</p>
                 {sidebarData.protocol && <p>Protocol: {sidebarData.protocol}</p>}
                 {sidebarData.severity && <p>Severity: {sidebarData.severity}</p>}
-                {sidebarData.category && <p>Category: {sidebarData.category}</p>}
               </div>
             </div>
 
@@ -464,11 +421,6 @@ export default function Home() {
                     {selectedPost.protocol.name} ({selectedPost.protocol.type})
                   </span>
                 )}
-                
-                {/* Category Badge */}
-                <span className="px-3 py-1 bg-zinc-800 rounded-full text-sm">
-                  {selectedPost.category}
-                </span>
 
                 {/* Severity Badge */}
                 {selectedPost.severity && (
