@@ -41,8 +41,8 @@
       }
     ],
     "report_url": "https://github.com/nullity00/zk-security-reviews/blob/main/Scroll/2023-04-scroll-zkEVM-wave1-securityreview.pdf",
-    "severity": "low",
-    "difficulty": "low",
+    "severity": "informational",
+    "difficulty": "N/A",
     "type": "Data Validation",
     "finding_id": "TOB-SCROLL-5",
     "target_file": "circuits/src/evm_circuit/util/math_gadget/{constant_division,lt}.rs",
