@@ -19,10 +19,6 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: 'https://i.postimg.cc/rsrr3rH1/zk-logo.png',
     },
-    category: {
-      type: String,
-      default: 'uncategorized',
-    },
     slug: {
       type: String,
       required: true,
@@ -33,6 +29,12 @@ const postSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+
+    codeLanguage: {
+      type: String,
+      default: ''
+    },
+    
     reportSource: {
       name: String,
       url: String
@@ -53,13 +55,13 @@ const postSchema = new mongoose.Schema(
     source: String,
     severity: {
       type: String,
-      enum: ['low', 'medium', 'high', 'critical'],
-      default: 'medium'
+      enum: ['N/A', 'informational', 'low', 'medium', 'high', 'critical'],
+      default: 'N/A'
     },
     difficulty: {
       type: String,
-      enum: ['low', 'medium', 'high'],
-      default: 'medium'
+      enum: ['N/A', 'low', 'medium', 'high'],
+      default: 'N/A'
     },
     tags: [String],
     frameworks: [String],
