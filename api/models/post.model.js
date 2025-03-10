@@ -48,7 +48,7 @@ const postSchema = new mongoose.Schema(
       name: String,
       type: {
         type: String,
-        enum: ['ZKEVM', 'ZK-ROLLUP', 'OTHER'],
+        enum: ['ZKEVM', 'ZKTRIE', 'OTHER'],
         default: 'OTHER'
       }
     },
