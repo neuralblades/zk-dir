@@ -29,7 +29,7 @@ export const create = async (req, res, next) => {
     : 'N/A';
 
   // Ensure protocol type is valid
-  const validTypes = ['ZKEVM', 'ZK-ROLLUP', 'OTHER'];
+  const validTypes = ['ZKEVM', 'ZKTRIE', 'OTHER'];
   const protocolType = req.body.protocol?.type && validTypes.includes(req.body.protocol.type)
     ? req.body.protocol.type
     : 'OTHER';
@@ -203,7 +203,7 @@ export const updatepost = async (req, res, next) => {
       : 'N/A';
 
     // Ensure protocol type is valid
-    const validTypes = ['ZKEVM', 'ZK-ROLLUP', 'OTHER'];
+    const validTypes = ['ZKEVM', 'ZKTRIE', 'OTHER'];
     const protocolType = req.body.protocol?.type && validTypes.includes(req.body.protocol.type)
       ? req.body.protocol.type
       : 'OTHER';
