@@ -30,7 +30,7 @@ router.get('/post/:slug', getPostBySlug);
 // Export search parameters for frontend validation
 router.get('/search-params', (req, res) => {
   res.json({
-    protocolTypes: ['ZKEVM', 'ZK-ROLLUP', 'OTHER'],
+    protocolTypes: ['ZKEVM', 'ZKTRIE', 'OTHER'],
     severityLevels: ['N/A', 'informational', 'low', 'medium', 'high', 'critical'],
     difficultyLevels: ['N/A', 'low', 'medium', 'high'],
   });
