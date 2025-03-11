@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import BookmarkButton from './BookmarkButton';
 
-export default function PostCard({ post, onClick }) {
+export default function PostCard({ post, onClick, onRemoveBookmark }) {
   const [username, setUsername] = useState('Anonymous');
+
+  const handleBookmarkToggle = (isBookmarked) => {
+    // If the bookmark was removed and we're on the bookmarks page
+    if (!isBookmarked && onRemoveBookmark) {
+      onRemoveBookmark(post._id);
+    }
+  };
 
   useEffect(() => {
     async function fetchUsername() {
@@ -77,6 +85,12 @@ export default function PostCard({ post, onClick }) {
               <span className="text-blue-400">{post.auditFirm}</span>
             )}
           </div>
+        </div>
+        <div className="flex space-x-2">
+            <BookmarkButton 
+              postId={post._id} 
+              onToggle={handleBookmarkToggle}
+            />
         </div>
       </div>
 

@@ -524,6 +524,14 @@ export default function Home() {
               </div>
             )}
 
+            {/* Main Content */}
+            <div className="my-6">
+              <div
+                className="post-content prose prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+              ></div>
+            </div>
+
             {/* Impact and Recommendation */}
             {(selectedPost.impact || selectedPost.recommendation) && (
               <div className="space-y-4 my-6">
@@ -541,14 +549,6 @@ export default function Home() {
                 )}
               </div>
             )}
-
-            {/* Main Content */}
-            <div className="my-6">
-              <div
-                className="post-content prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-              ></div>
-            </div>
 
             {/* Reporters */}
             {selectedPost.reported_by?.length > 0 && (
