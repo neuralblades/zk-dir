@@ -247,6 +247,7 @@ export default function Home() {
                 <option value="">All Types</option>
                 <option value="ZKEVM">ZKEVM</option>
                 <option value="ZKTRIE">ZKTRIE</option>
+                <option value="L2GETH">L2GETH</option>
                 <option value="OTHER">OTHER</option>
               </select>
             </div>
