@@ -397,6 +397,7 @@ export default function UpdatePost() {
             <option value="OTHER">Select Protocol Type</option>
             <option value="ZKEVM">ZKEVM</option>
             <option value="ZKTRIE">ZKTRIE</option>
+            <option value="L2GETH">L2GETH</option>
           </select>
         </div>
 
