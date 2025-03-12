@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+// import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import BookmarkButton from './BookmarkButton';
 
 export default function PostCard({ post, onClick, onRemoveBookmark }) {
-  const [username, setUsername] = useState('Anonymous');
+  // const [username, setUsername] = useState('Anonymous');
 
   const handleBookmarkToggle = (isBookmarked) => {
     // If the bookmark was removed and we're on the bookmarks page
@@ -12,25 +12,25 @@ export default function PostCard({ post, onClick, onRemoveBookmark }) {
     }
   };
 
-  useEffect(() => {
-    async function fetchUsername() {
-      try {
-        const response = await fetch(`/api/user/${post.userId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch user');
-        }
-        const data = await response.json();
-        setUsername(data.username);
-      } catch (error) {
-        console.error('Error fetching username:', error);
-        setUsername('Anonymous');
-      }
-    }
+  // useEffect(() => {
+  //   async function fetchUsername() {
+  //     try {
+  //       const response = await fetch(`/api/user/${post.userId}`);
+  //       if (!response.ok) {
+  //         throw new Error('Failed to fetch user');
+  //       }
+  //       const data = await response.json();
+  //       setUsername(data.username);
+  //     } catch (error) {
+  //       console.error('Error fetching username:', error);
+  //       setUsername('Anonymous');
+  //     }
+  //   }
 
-    if (post.userId) {
-      fetchUsername();
-    }
-  }, [post.userId]);
+  //   if (post.userId) {
+  //     fetchUsername();
+  //   }
+  // }, [post.userId]);
 
   function getSeverityColor(severity) {
     switch (severity?.toLowerCase()) {
@@ -75,10 +75,10 @@ export default function PostCard({ post, onClick, onRemoveBookmark }) {
         </Link>
         <div className="flex flex-col flex-grow">
           <h2 className="text-lg font-semibold line-clamp-2 mb-2">{post.title}</h2>
-          <div className="flex items-center gap-2 text-xs text-gray-300">
+          {/* <div className="flex items-center gap-2 text-xs text-gray-300">
             <span>{username}</span>
-          </div>
-          <div className="flex justify-between text-xs text-gray-300 mb-2">
+          </div> */}
+          <div className="flex gap-5 text-xs text-gray-300 mb-2">
             {/* Use publishDate instead of createdAt */}
             <span>{new Date(post.publishDate).toLocaleDateString()}</span>
             {post.auditFirm && (
@@ -93,27 +93,6 @@ export default function PostCard({ post, onClick, onRemoveBookmark }) {
             />
         </div>
       </div>
-
-      {/* Report Source Link */}
-      {post.reportSource?.name && (
-        <div className="mt-2 text-sm mb-2">
-          <span className="text-gray-400">Source: </span>
-          {post.reportSource.url ? (
-            <a
-              href={post.reportSource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {post.reportSource.name}
-            </a>
-          ) : (
-            <span>{post.reportSource.name}</span>
-          )}
-        </div>
-      )}
-
 
       {/* Tags Section */}
       <div className="flex flex-wrap gap-2 mb-2">
@@ -153,12 +132,35 @@ export default function PostCard({ post, onClick, onRemoveBookmark }) {
         </div>
       )}
 
-      {/* Finding ID */}
-      {post.finding_id && (
-        <div className=" text-xs text-gray-400">
-          ID: {post.finding_id}
-        </div>
-      )}
+      <div className='flex gap-5'>
+        {/* Finding ID */}
+        <span>
+          {post.finding_id && (
+            <span className=" text-xs text-gray-400">
+              ID: {post.finding_id}
+            </span>
+          )}
+        </span>
+
+        {post.reportSource?.name && (
+          <span>
+            <span className="text-gray-400 text-xs">Source: </span>
+            {post.reportSource.url ? (
+              <a
+                href={post.reportSource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 text-xs hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {post.reportSource.name}
+              </a>
+            ) : (
+              <span>{post.reportSource.name}</span>
+            )}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
