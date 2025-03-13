@@ -74,7 +74,7 @@ export default function PostCard({ post, onClick, onRemoveBookmark }) {
           />
         </Link>
         <div className="flex flex-col flex-grow">
-          <h2 className="text-lg font-semibold line-clamp-2 mb-2">{post.title}</h2>
+          <h2 className="text-lg font-semibold line-clamp-1 mb-2">{post.title}</h2>
           {/* <div className="flex items-center gap-2 text-xs text-gray-300">
             <span>{username}</span>
           </div> */}
