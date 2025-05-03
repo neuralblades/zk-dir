@@ -17,7 +17,7 @@ const processContent = (contentArray) => {
   
   const content = contentArray.map(item => {
     if (item.type === 'text') {
-      return item.text;
+      return `<p>${item.text.replace(/\n/g, '<br><br>')}</p>`;
     } else if (item.type === 'code') {
       // Count language occurrences
       if (item.language) {

@@ -149,7 +149,7 @@ export default function PostPage() {
     <main className='p-3 flex flex-col max-w-6xl mx-auto min-h-screen'>
       {/* Header Section */}
       <div className="space-y-4 border-b border-zinc-800 pb-6">
-        <div className='flex justify-between mt-6'>
+        <div className='flex mt-6'>
           {/* Cover Image */}
           {post?.image && (
             <img
@@ -254,6 +254,15 @@ export default function PostPage() {
         </div>
       )}
 
+      {/* Main Content */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Detailed Description</h2>
+        <div
+          className='post-content prose prose-invert max-w-none'
+          dangerouslySetInnerHTML={{ __html: post?.content }}
+        />
+      </div>
+
       {/* Impact and Recommendation */}
       {(post?.impact || post?.recommendation) && (
         <div className="mt-6 space-y-4">
@@ -271,15 +280,6 @@ export default function PostPage() {
           )}
         </div>
       )}
-
-      {/* Main Content */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Detailed Description</h2>
-        <div
-          className='post-content prose prose-invert max-w-none'
-          dangerouslySetInnerHTML={{ __html: post?.content }}
-        />
-      </div>
 
       {/* Target File */}
       {post?.target_file && (

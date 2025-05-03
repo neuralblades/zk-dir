@@ -2,6 +2,7 @@ import express from 'express';
 import { verifyToken } from '../utils/verifyUser.js';
 import { 
   create, 
+  bulkDeletePosts,
   deletepost, 
   getposts, 
   updatepost,
@@ -16,6 +17,7 @@ const router = express.Router();
 // Existing routes
 router.post('/create', verifyToken, create);
 router.get('/getposts', getposts);
+router.delete('/bulk', verifyToken, bulkDeletePosts);
 router.delete('/deletepost/:postId/:userId', verifyToken, deletepost);
 router.put('/updatepost/:postId/:userId', verifyToken, updatepost);
 
@@ -30,7 +32,7 @@ router.get('/post/:slug', getPostBySlug);
 // Export search parameters for frontend validation
 router.get('/search-params', (req, res) => {
   res.json({
-    protocolTypes: ['ZKEVM', 'ZKTRIE', 'OTHER'],
+    protocolTypes: ['ZKEVM', 'ZKTRIE', 'L2GETH', 'OTHER'],
     severityLevels: ['N/A', 'informational', 'low', 'medium', 'high', 'critical'],
     difficultyLevels: ['N/A', 'low', 'medium', 'high'],
   });

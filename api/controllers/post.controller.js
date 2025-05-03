@@ -29,7 +29,7 @@ export const create = async (req, res, next) => {
     : 'N/A';
 
   // Ensure protocol type is valid
-  const validTypes = ['ZKEVM', 'ZKTRIE', 'OTHER'];
+  const validTypes = ['ZKEVM', 'ZKTRIE', 'L2GETH', 'OTHER'];
   const protocolType = req.body.protocol?.type && validTypes.includes(req.body.protocol.type)
     ? req.body.protocol.type
     : 'OTHER';
@@ -172,6 +172,50 @@ export const getLanguages = async (req, res, next) => {
   }
 };
 
+export const bulkDeletePosts = async (req, res, next) => {
+  // Check if user is admin
+  if (!req.user.isAdmin) {
+    return next(errorHandler(403, 'You are not allowed to delete these posts'));
+  }
+
+  // Validate request body
+  if (!req.body.postIds || !Array.isArray(req.body.postIds) || req.body.postIds.length === 0) {
+    return next(errorHandler(400, 'Please provide an array of post IDs to delete'));
+  }
+
+  try {
+    // Find posts to verify user owns them (if required)
+    if (req.query.verifyOwnership === 'true') {
+      const posts = await Post.find({
+        _id: { $in: req.body.postIds }
+      });
+      
+      // Check if all posts belong to the user
+      const unauthorizedPosts = posts.filter(post => post.userId !== req.user.id);
+      if (unauthorizedPosts.length > 0) {
+        return next(errorHandler(403, 'You are not allowed to delete some of these posts'));
+      }
+    }
+
+    // Delete all posts in the array
+    const result = await Post.deleteMany({
+      _id: { $in: req.body.postIds }
+    });
+
+    // Return appropriate response
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'No posts found to delete' });
+    }
+
+    res.status(200).json({
+      message: `Successfully deleted ${result.deletedCount} posts`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deletepost = async (req, res, next) => {
   if (!req.user.isAdmin || req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to delete this post'));
@@ -203,7 +247,7 @@ export const updatepost = async (req, res, next) => {
       : 'N/A';
 
     // Ensure protocol type is valid
-    const validTypes = ['ZKEVM', 'ZKTRIE', 'OTHER'];
+    const validTypes = ['ZKEVM', 'ZKTRIE', 'L2GETH', 'OTHER'];
     const protocolType = req.body.protocol?.type && validTypes.includes(req.body.protocol.type)
       ? req.body.protocol.type
       : 'OTHER';

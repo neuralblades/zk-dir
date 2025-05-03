@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.route.js'
 import postRoutes from './routes/post.route.js'
 import commentRoutes from './routes/comment.route.js'
 import cookieParser from 'cookie-parser';
+import bookmarkRoutes from './routes/bookmark.route.js';
 import path, { dirname } from 'path';
 
 dotenv.config();
@@ -31,7 +32,8 @@ app.listen(3000, () => {
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/post', postRoutes);
-app.use('/api/comment', commentRoutes)
+app.use('/api/bookmark', bookmarkRoutes);
+app.use('/api/comment', commentRoutes);
 app.use(express.static(path.join(__dirname, '/client/dist')));
 
 app.get('*', (req, res) => {
