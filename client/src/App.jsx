@@ -12,6 +12,7 @@ import UpdatePost from './pages/UpdatePost';
 import PostPage from './pages/PostPage';
 import ScrollToTop from './components/ScrollToTop';
 import BookmarkedPosts from './pages/BookmarkedPosts';
+import Landing from './pages/Landing';
 
 export default function App() {
   return (
@@ -19,8 +20,9 @@ export default function App() {
       <ScrollToTop />
       <Header />
       <Routes>
+        <Route path='/' element={<Landing />} />
         <Route element={<PrivateRoute />}>
-          <Route path='/' element={<Home />} />
+          <Route path='/home' element={<Home />} />
           <Route path='/post/:postSlug' element={<PostPage />} />
           <Route path='/bookmarks' element={<BookmarkedPosts />} />
           <Route path='/dashboard' element={<Dashboard />} />
