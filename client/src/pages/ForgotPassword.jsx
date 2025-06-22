@@ -175,7 +175,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8'>
       {/* Background glow effect */}
       <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gray-500/10 rounded-full blur-3xl" />
       
