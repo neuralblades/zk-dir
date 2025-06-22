@@ -118,7 +118,7 @@ export const google = async (req, res, next) => {
 
 // Create email transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: 'gmail', // or your email service
     auth: {
       user: process.env.EMAIL_USER, // your email
