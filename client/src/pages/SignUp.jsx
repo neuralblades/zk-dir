@@ -280,7 +280,7 @@ export default function SignUp() {
         variants={staggerContainer}
       >
         <motion.div className="text-center" variants={fadeInUp}>
-          <Link to='/'>
+          <Link to='/home'>
             <img className="mx-auto h-12 w-auto mb-8" src="/img/logozk1.png" alt="Logo" />
           </Link>
           <h2 className="text-4xl font-bold text-white mb-2">
