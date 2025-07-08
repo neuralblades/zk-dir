@@ -70,6 +70,11 @@ export const getposts = async (req, res, next) => {
   try {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
+    const page = parseInt(req.query.page) || 1;
+    
+    // Calculate skip based on page if provided, otherwise use startIndex
+    const skip = req.query.page ? (page - 1) * limit : startIndex;
+    
     const sortDirection = req.query.order === 'asc' ? 1 : -1;
 
     // Enhanced query builder with ZK-specific filters
@@ -98,9 +103,22 @@ export const getposts = async (req, res, next) => {
       }),
     };
 
+    // Handle different sort options
+    let sortOptions = { updatedAt: sortDirection };
+    
+    if (req.query.sort === 'severity') {
+      sortOptions = { severity: -1, updatedAt: -1 };
+    } else if (req.query.sort === 'difficulty') {
+      sortOptions = { difficulty: -1, updatedAt: -1 };
+    } else if (req.query.sort === 'desc') {
+      sortOptions = { createdAt: -1 };
+    } else if (req.query.sort === 'asc') {
+      sortOptions = { createdAt: 1 };
+    }
+
     const posts = await Post.find(query)
-      .sort({ updatedAt: sortDirection })
-      .skip(startIndex)
+      .sort(sortOptions)
+      .skip(skip)
       .limit(limit);
 
     const totalPosts = await Post.countDocuments(query);
@@ -117,7 +135,11 @@ export const getposts = async (req, res, next) => {
       publishDate: { $gte: oneMonthAgo }
     });
 
-    // Add aggregated stats for ZK bugs (updated to include all severity levels)
+    // Get unique protocols and severities for filters
+    const protocols = await Post.distinct('protocol.name', query);
+    const severities = await Post.distinct('severity', query);
+
+    // Add aggregated stats for ZK bugs
     const stats = await Post.aggregate([
       { $match: query },
       {
@@ -138,16 +160,59 @@ export const getposts = async (req, res, next) => {
       posts,
       totalPosts,
       lastMonthPosts,
-      stats: stats[0] || {
-        totalCritical: 0,
-        totalHigh: 0,
-        totalMedium: 0,
-        totalLow: 0,
-        totalInformational: 0,
-        totalNA: 0,
-        protocolCount: []
+      currentPage: page,
+      totalPages: Math.ceil(totalPosts / limit),
+      stats: {
+        protocols: protocols.filter(p => p),
+        severities: severities.filter(s => s),
+        ...(stats[0] || {
+          totalCritical: 0,
+          totalHigh: 0,
+          totalMedium: 0,
+          totalLow: 0,
+          totalInformational: 0,
+          totalNA: 0,
+          protocolCount: []
+        })
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSearchSuggestions = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.length < 2) {
+      return res.status(200).json({ suggestions: [] });
+    }
+
+    const titleSuggestions = await Post.find({
+      title: { $regex: q, $options: 'i' }
+    })
+    .select('title')
+    .limit(3);
+
+    const protocolSuggestions = await Post.distinct('protocol.name', {
+      'protocol.name': { $regex: q, $options: 'i' }
+    });
+
+    const severitySuggestions = ['critical', 'high', 'medium', 'low', 'informational'].filter(
+      severity => severity.toLowerCase().includes(q.toLowerCase())
+    );
+
+    const suggestions = [
+      ...titleSuggestions.map(p => p.title),
+      ...protocolSuggestions.slice(0, 2),
+      ...severitySuggestions.slice(0, 2)
+    ]
+    .filter(Boolean)
+    .slice(0, 8);
+
+    res.status(200).json({ suggestions });
+
   } catch (error) {
     next(error);
   }

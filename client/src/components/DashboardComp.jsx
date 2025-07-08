@@ -2,72 +2,12 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
-  HiAnnotation,
-  HiArrowNarrowUp,
-  HiDocumentText,
-  HiOutlineUserGroup,
-} from 'react-icons/hi';
-
-const StatCard = ({ title, value, icon: Icon, lastMonth }) => (
-  <div className='flex flex-col p-3 bg-zinc-900 gap-4 md:w-72 w-full rounded-md shadow-md'>
-    <div className='flex justify-between'>
-      <div>
-        <h3 className='text-gray-500 text-md uppercase'>{title}</h3>
-        <p className='text-2xl'>{value}</p>
-      </div>
-      <Icon className='bg-zinc-950 border border-zinc-700 effect-hover2 text-white rounded-full text-5xl p-3 shadow-lg' />
-    </div>
-    <div className='flex gap-2 text-sm'>
-      <span className='text-green-500 flex items-center'>
-        <HiArrowNarrowUp />
-        {lastMonth}
-      </span>
-      <div className='text-gray-500'>Last month</div>
-    </div>
-  </div>
-);
-
-const CustomTable = ({ title, data, columns, link }) => (
-  <div className='flex flex-col w-full md:w-auto shadow-md p-2 rounded-md bg-zinc-900'>
-    <div className='flex justify-between p-3 text-sm font-semibold'>
-      <h1 className='text-center p-2'>{title}</h1>
-      <button className='bg-zinc-950 border border-zinc-700 text-white px-4 py-2 rounded hover:bg-zinc-800'>
-        <Link to={link}>See all</Link>
-      </button>
-    </div>
-    <table className='min-w-full divide-y divide-zinc-800'>
-      <thead className='bg-zinc-950'>
-        <tr>
-          {columns.map((column, index) => (
-            <th key={index} className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              {column}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody className='bg-zinc-900 divide-y divide-zinc-800'>
-        {data.map((item, index) => (
-          <tr key={index}>
-            {columns.map((column, colIndex) => (
-              <td key={colIndex} className='px-6 py-4 whitespace-nowrap'>
-                {column === 'User image' && (
-                  <img src={item.profilePicture} alt="user" className='w-10 h-10 rounded-full bg-gray-500' />
-                )}
-                {column === 'Post image' && (
-                  <img src={item.image} alt="post" className='w-14 h-10 rounded-md bg-zinc-900' />
-                )}
-                {column === 'Username' && item.username}
-                {column === 'Post Title' && item.title}
-                {column === 'Protocol' && (item.protocol?.name || 'N/A')}
-                {column === 'Likes' && item.numberOfLikes}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  FiUsers,
+  FiMessageCircle,
+  FiFileText,
+  FiTrendingUp,
+  FiExternalLink
+} from 'react-icons/fi';
 
 export default function DashboardComp() {
   const [users, setUsers] = useState([]);
@@ -103,32 +43,148 @@ export default function DashboardComp() {
     }
   }, [currentUser]);
 
-  return (
-    <div className='p-3 md:mx-auto'>
-      <div className='flex-wrap flex gap-4 justify-center'>
-        <StatCard title="Total Users" value={totalUsers} icon={HiOutlineUserGroup} lastMonth={lastMonthUsers} />
-        <StatCard title="Total Comments" value={totalComments} icon={HiAnnotation} lastMonth={lastMonthComments} />
-        <StatCard title="Total Posts" value={totalPosts} icon={HiDocumentText} lastMonth={lastMonthPosts} />
+  const StatCard = ({ title, value, icon: Icon, lastMonth, color }) => (
+    <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-zinc-400 text-sm font-medium uppercase tracking-wide">{title}</p>
+          <p className="text-2xl font-bold text-white mt-1">{value.toLocaleString()}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <Icon className="w-6 h-6" />
+        </div>
       </div>
-      <div className='flex flex-wrap gap-4 py-3 mx-auto justify-center'>
-        <CustomTable 
-          title="Recent users" 
-          data={users} 
-          columns={['User image', 'Username']} 
-          link='/dashboard?tab=users' 
-        />
-        <CustomTable 
-          title="Recent comments" 
-          data={comments} 
-          columns={['Comment content', 'Likes']} 
-          link='/dashboard?tab=comments' 
-        />
-        <CustomTable 
-          title="Recent posts" 
-          data={posts} 
-          columns={['Post image', 'Post Title', 'Protocol']} 
-          link='/dashboard?tab=posts' 
-        />
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 text-green-400">
+          <FiTrendingUp className="w-4 h-4" />
+          <span className="text-sm font-medium">+{lastMonth}</span>
+        </div>
+        <span className="text-zinc-500 text-sm">this month</span>
+      </div>
+    </div>
+  );
+
+  const DataTable = ({ title, data, link, children }) => (
+    <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <Link
+          to={link}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors duration-200"
+        >
+          See all
+          <FiExternalLink className="w-4 h-4" />
+        </Link>
+      </div>
+      <div className="p-6">
+        {data.length > 0 ? (
+          <div className="space-y-3">
+            {children}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-zinc-500">
+            <p>No data available</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex-1 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Dashboard Overview</h1>
+          <p className="text-zinc-400">Monitor your platform's key metrics and recent activity</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title="Total Users"
+            value={totalUsers}
+            icon={FiUsers}
+            lastMonth={lastMonthUsers}
+            color="bg-blue-950/30 text-blue-400"
+          />
+          <StatCard
+            title="Total Comments"
+            value={totalComments}
+            icon={FiMessageCircle}
+            lastMonth={lastMonthComments}
+            color="bg-green-950/30 text-green-400"
+          />
+          <StatCard
+            title="Total Posts"
+            value={totalPosts}
+            icon={FiFileText}
+            lastMonth={lastMonthPosts}
+            color="bg-purple-950/30 text-purple-400"
+          />
+        </div>
+
+        {/* Data Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Users */}
+          <DataTable title="Recent Users" data={users} link="/dashboard?tab=users">
+            {users.map((user, index) => (
+              <div key={index} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg">
+                <img
+                  src={user.profilePicture}
+                  alt={user.username}
+                  className="w-10 h-10 rounded-full border border-zinc-700/50 object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-white truncate">{user.username}</p>
+                  <p className="text-sm text-zinc-400 truncate">{user.email}</p>
+                </div>
+              </div>
+            ))}
+          </DataTable>
+
+          {/* Recent Comments */}
+          <DataTable title="Recent Comments" data={comments} link="/dashboard?tab=comments">
+            {comments.map((comment, index) => (
+              <div key={index} className="p-3 bg-zinc-800/30 rounded-lg">
+                <p className="text-sm text-white line-clamp-2 mb-2">{comment.content}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-400">
+                    {new Date(comment.createdAt).toLocaleDateString()}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <FiMessageCircle className="w-3 h-3 text-zinc-500" />
+                    <span className="text-xs text-zinc-500">{comment.numberOfLikes || 0} likes</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </DataTable>
+
+          {/* Recent Posts */}
+          <DataTable title="Recent Posts" data={posts} link="/dashboard?tab=posts">
+            {posts.map((post, index) => (
+              <div key={index} className="flex gap-3 p-3 bg-zinc-800/30 rounded-lg">
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="w-12 h-12 rounded-lg border border-zinc-700/50 object-cover flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-white line-clamp-2 text-sm mb-1">{post.title}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400">
+                      {post.protocol?.name || 'N/A'}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </DataTable>
+        </div>
       </div>
     </div>
   );

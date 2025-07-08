@@ -9,7 +9,8 @@ import {
   getPostsByProtocol,
   getPostStats,
   getPostBySlug,
-  getLanguages
+  getLanguages,
+  getSearchSuggestions
 } from '../controllers/post.controller.js';
 
 const router = express.Router();
@@ -28,6 +29,7 @@ router.get('/by-date-range', getposts);
 router.get('/protocol/:protocolName', getPostsByProtocol);
 router.get('/stats', getPostStats);
 router.get('/post/:slug', getPostBySlug);
+router.get('/search-suggestions', getSearchSuggestions);
 
 // Export search parameters for frontend validation
 router.get('/search-params', (req, res) => {

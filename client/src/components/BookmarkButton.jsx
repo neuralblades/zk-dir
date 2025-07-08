@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { BsBookmark, BsBookmarkFill } from 'react-icons/bs';
+import { FiBookmark } from 'react-icons/fi';
 
 export default function BookmarkButton({ postId, onToggle }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -32,7 +32,9 @@ export default function BookmarkButton({ postId, onToggle }) {
     checkBookmarkStatus();
   }, [postId, currentUser]);
 
-  const handleToggleBookmark = async () => {
+  const handleToggleBookmark = async (e) => {
+    e.stopPropagation(); // Prevent card click when clicking bookmark
+    
     if (!currentUser) {
       // Handle not logged in state - could redirect to login or show a message
       alert('Please log in to bookmark posts');
@@ -79,13 +81,14 @@ export default function BookmarkButton({ postId, onToggle }) {
     <button
       onClick={handleToggleBookmark}
       disabled={isLoading}
-      className="flex items-center text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+      className={`p-2 rounded-lg border border-zinc-700/50 transition-colors duration-200 ${
+        isBookmarked 
+          ? 'bg-zinc-700/50 text-white border-zinc-600/50' 
+          : 'bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50'
+      }`}
       title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
     >
-      {isBookmarked ? 
-        <BsBookmarkFill className="text-blue-500 dark:text-blue-400" size={18} /> : 
-        <BsBookmark size={18} />
-      }
+      <FiBookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
     </button>
   );
 }

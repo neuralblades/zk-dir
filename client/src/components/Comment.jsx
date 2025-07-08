@@ -1,6 +1,5 @@
-import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { FaThumbsUp } from 'react-icons/fa';
+import { FiThumbsUp, FiEdit3, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
 import { useSelector } from 'react-redux';
 
 export default function Comment({ comment, onLike, onEdit, onDelete }) {
@@ -49,92 +48,123 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
     }
   };
 
+  const formatTimeAgo = (dateString) => {
+    const now = new Date();
+    const commentDate = new Date(dateString);
+    const diffInSeconds = Math.floor((now - commentDate) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return commentDate.toLocaleDateString();
+  };
+
+  const isLiked = currentUser && comment.likes.includes(currentUser._id);
+  const canEdit = currentUser && (currentUser._id === comment.userId || currentUser.isAdmin);
+
   return (
-    <div className='flex p-4 border-b border-zinc-900 text-sm'>
-      <div className='flex-shrink-0 mr-3'>
-        <img
-          className='w-10 h-10 rounded-full bg-gray-200'
-          src={user.profilePicture}
-          alt={user.username}
-        />
-      </div>
-      <div className='flex-1'>
-        <div className='flex items-center mb-1'>
-          <span className='font-bold mr-1 text-xs truncate'>
-            {user ? `@${user.username}` : 'anonymous user'}
-          </span>
-          <span className='text-gray-500 text-xs'>
-            {moment(comment.createdAt).fromNow()}
-          </span>
+    <div className="p-4 bg-zinc-900/30 border border-zinc-800/50 rounded-lg">
+      <div className="flex gap-3">
+        {/* Profile Picture */}
+        <div className="flex-shrink-0">
+          <img
+            className="w-10 h-10 rounded-full border border-zinc-700/50 object-cover"
+            src={user.profilePicture}
+            alt={user.username || 'User'}
+          />
         </div>
-        {isEditing ? (
-          <>
-            <textarea
-              className='w-full p-2 text-sm text-white bg-zinc-950 rounded-lg border border-zinc-900 focus:ring-gray-900 focus:border-violet-950 mb-2'
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              rows="3"
-            />
-            <div className='flex justify-end gap-2 text-xs'>
-              <button
-                type='button'
-                className='px-3 py-1 text-xs font-medium text-center text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 focus:ring-4 focus:outline-none focus:ring-violet-950'
-                onClick={handleSave}
-              >
-                Save
-              </button>
-              <button
-                type='button'
-                className='px-3 py-1 text-xs font-medium text-center text-white hover:text-white border border-violet-950 hover:bg-violet-950 focus:ring-4 focus:outline-none focus:ring-violet-950 rounded-lg'
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </button>
+
+        {/* Comment Content */}
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-medium text-white text-sm">
+              @{user.username || 'anonymous'}
+            </span>
+            <span className="text-zinc-500 text-xs">
+              {formatTimeAgo(comment.createdAt)}
+            </span>
+          </div>
+
+          {/* Edit Mode */}
+          {isEditing ? (
+            <div className="space-y-3">
+              <textarea
+                className="w-full p-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200 resize-none"
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                rows="3"
+                placeholder="Edit your comment..."
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={!editedContent.trim()}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-300 text-black text-sm font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiCheck className="w-3 h-3" />
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-700/50 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                >
+                  <FiX className="w-3 h-3" />
+                  Cancel
+                </button>
+              </div>
             </div>
-          </>
-        ) : (
-          <>
-            <p className='text-gray-500 pb-2'>{comment.content}</p>
-            <div className='flex items-center pt-2 text-xs  max-w-fit gap-2'>
-              <button
-                type='button'
-                onClick={() => onLike(comment._id)}
-                className={`text-gray-400 hover:text-blue-500 ${
-                  currentUser &&
-                  comment.likes.includes(currentUser._id) &&
-                  '!text-blue-500'
-                }`}
-              >
-                <FaThumbsUp className='text-sm' />
-              </button>
-              <p className='text-gray-400'>
-                {comment.numberOfLikes > 0 &&
-                  comment.numberOfLikes +
-                    ' ' +
-                    (comment.numberOfLikes === 1 ? 'like' : 'likes')}
+          ) : (
+            <>
+              {/* Comment Text */}
+              <p className="text-zinc-200 text-sm leading-relaxed mb-3">
+                {comment.content}
               </p>
-              {currentUser &&
-                (currentUser._id === comment.userId || currentUser.isAdmin) && (
-                  <>
+
+              {/* Actions */}
+              <div className="flex items-center gap-4">
+                {/* Like Button */}
+                <button
+                  onClick={() => onLike(comment._id)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-colors duration-200 ${
+                    isLiked
+                      ? 'text-blue-400 bg-blue-950/20'
+                      : 'text-zinc-400 hover:text-blue-400 hover:bg-blue-950/10'
+                  }`}
+                >
+                  <FiThumbsUp className="w-4 h-4" />
+                  {comment.numberOfLikes > 0 && (
+                    <span className="font-medium">
+                      {comment.numberOfLikes}
+                    </span>
+                  )}
+                </button>
+
+                {/* Edit and Delete Buttons */}
+                {canEdit && (
+                  <div className="flex items-center gap-2">
                     <button
-                      type='button'
                       onClick={handleEdit}
-                      className='text-gray-400 hover:text-violet-500'
+                      className="flex items-center gap-1 px-2 py-1 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg text-sm transition-colors duration-200"
                     >
+                      <FiEdit3 className="w-3 h-3" />
                       Edit
                     </button>
                     <button
-                      type='button'
                       onClick={() => onDelete(comment._id)}
-                      className='text-gray-400 hover:text-red-500'
+                      className="flex items-center gap-1 px-2 py-1 text-zinc-400 hover:text-red-400 hover:bg-red-950/20 rounded-lg text-sm transition-colors duration-200"
                     >
+                      <FiTrash2 className="w-3 h-3" />
                       Delete
                     </button>
-                  </>
+                  </div>
                 )}
-            </div>
-          </>
-        )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
