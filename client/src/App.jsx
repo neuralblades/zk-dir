@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
@@ -16,11 +16,15 @@ import ScrollToTop from './components/ScrollToTop';
 import BookmarkedPosts from './pages/BookmarkedPosts';
 import Landing from './pages/Landing';
 
-export default function App() {
+function AppContent() {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/home';
+
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
-      <Header />
+      {/* Only show original Header on non-home pages */}
+      {!isHomePage && <Header />}
       <Routes>
         <Route path='/' element={<Landing />} />
         <Route element={<PrivateRoute />}>
@@ -39,6 +43,14 @@ export default function App() {
         </Route>
       </Routes>
       <FooterCom />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

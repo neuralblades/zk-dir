@@ -5,9 +5,8 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/monokai-sublime.css';
 import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../firebase';
-import { CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
 import { useNavigate } from 'react-router-dom';
+import { FiUpload, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
 
 export default function CreatePost() {
   useEffect(() => {
@@ -23,7 +22,6 @@ export default function CreatePost() {
     title: '',
     content: '',
     image: '',
-    // ZK Bug specific fields
     publishDate: '',
     reportSource: {
       name: '',
@@ -65,52 +63,43 @@ export default function CreatePost() {
         setUploadError('Please select an image');
         return;
       }
-  
-      // File size validation (e.g., 2MB limit)
+
       const TWO_MB = 2 * 1024 * 1024;
       if (file.size > TWO_MB) {
         setUploadError('File size should be less than 2MB');
         return;
       }
-  
-      // File type validation
+
       if (!file.type.startsWith('image/')) {
         setUploadError('Please upload only image files');
         return;
       }
-  
+
       setUploadError(null);
       const storage = getStorage(app);
-      
-      // Create a unique filename
       const fileName = new Date().getTime() + '-' + file.name;
-      // Create reference to zk-bugs folder
       const storageRef = ref(storage, 'zk-bugs/' + fileName);
-      
       const uploadTask = uploadBytesResumable(storageRef, file);
-  
+
       uploadTask.on(
         'state_changed',
         (snapshot) => {
-          // Progress monitoring
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress.toFixed(0));
         },
         (error) => {
-          // Error handling
           console.error('Upload error:', error);
           setUploadError('Failed to upload image: ' + error.message);
           setUploadProgress(null);
           setFile(null);
         },
         async () => {
-          // Upload completed successfully
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             setFormData((prev) => ({ ...prev, image: downloadURL }));
             setUploadProgress(null);
             setUploadError(null);
-            setFile(null); // Clear the file input
+            setFile(null);
           } catch (error) {
             console.error('Error getting download URL:', error);
             setUploadError('Failed to get image URL');
@@ -126,7 +115,6 @@ export default function CreatePost() {
     }
   };
 
-  // Handle tag additions
   const handleAddTag = (e) => {
     e.preventDefault();
     if (currentTag && !formData.tags.includes(currentTag)) {
@@ -138,7 +126,6 @@ export default function CreatePost() {
     }
   };
 
-  // Handle framework additions
   const handleAddFramework = (e) => {
     e.preventDefault();
     if (currentFramework && !formData.frameworks.includes(currentFramework)) {
@@ -150,7 +137,6 @@ export default function CreatePost() {
     }
   };
 
-  // Handle reporter additions
   const handleAddReporter = (e) => {
     e.preventDefault();
     if (currentReporter && !formData.reported_by.includes(currentReporter)) {
@@ -162,7 +148,6 @@ export default function CreatePost() {
     }
   };
 
-  // Handle scope changes
   const handleScopeChange = (index, field, value) => {
     const newScope = [...formData.scope];
     newScope[index] = { ...newScope[index], [field]: value };
@@ -176,6 +161,13 @@ export default function CreatePost() {
     }));
   };
 
+  const handleRemoveScope = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      scope: prev.scope.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -183,30 +175,26 @@ export default function CreatePost() {
       setPublishError('Title and content are required!');
       return;
     }
-  
+
     setPublishError(null);
     setIsSubmitting(true);
-  
-    // Create the form data object
+
     const postData = {
       ...formData,
-      // Ensure content is passed as a string (ReactQuill HTML)
       content: formData.content,
-      // Clean up empty scope entries if any
       scope: formData.scope.filter(s => s.name.trim() !== ''),
-      // Ensure arrays are not null
       tags: formData.tags || [],
       frameworks: formData.frameworks || [],
       reported_by: formData.reported_by || []
     };
-  
+
     try {
       const res = await fetch('/api/post/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postData),
       });
-  
+
       const data = await res.json();
       
       if (!res.ok) {
@@ -214,7 +202,7 @@ export default function CreatePost() {
         setIsSubmitting(false);
         return;
       }
-  
+
       navigate(`/post/${data.slug}`);
     } catch (error) {
       console.error('Error publishing post:', error);
@@ -223,7 +211,6 @@ export default function CreatePost() {
     }
   };
 
-  // Your existing ReactQuill configuration
   const modules = useMemo(() => ({
     syntax: {
       highlight: (text) => hljs.highlightAuto(text).value,
@@ -244,413 +231,439 @@ export default function CreatePost() {
   ];
 
   return (
-    <div className="p-3 max-w-3xl mx-auto min-h-screen">
-      <h1 className="text-center text-3xl my-7 font-semibold">Create a ZK Bug Report</h1>
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        {/* Title */}
-        <div className="flex flex-col gap-4 sm:flex-row justify-between">
-          <input
-            type="text"
-            placeholder="Title"
-            required
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          />
+    <div className="min-h-screen bg-black text-white">
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2">Create ZK Bug Report</h1>
+          <p className="text-zinc-400">Document and share zero-knowledge proof vulnerabilities</p>
         </div>
-        
-        {/* Publish Date */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col">
-            <label htmlFor="publishDate" className="font-semibold mb-1 text-zinc-300">
-              Publish Date:
-            </label>
-            <input
-              type="date"
-              id="publishDate"
-              required
-              className="flex-1 border p-2 bg-zinc-800 rounded-md"
-              value={formData.publishDate ? new Date(formData.publishDate).toISOString().split('T')[0] : ''}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, publishDate: e.target.value }))
-              }
-            />
-          </div>
-        
-          {/* Report Source */}
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label htmlFor="reportSourceName" className="font-semibold mb-1 text-zinc-300">
-                Source Name:
-              </label>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Information */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+            <div className="space-y-4">
               <input
                 type="text"
-                id="reportSourceName"
-                placeholder="e.g., Nullity00"
-                className="w-full border p-2 bg-zinc-800 rounded-md"
-                value={formData.reportSource.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({
+                placeholder="Bug Report Title"
+                required
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Publish Date</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                    value={formData.publishDate ? new Date(formData.publishDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, publishDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Audit Firm</label>
+                  <input
+                    type="text"
+                    placeholder="Audit Firm Name"
+                    className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                    value={formData.auditFirm}
+                    onChange={(e) => setFormData(prev => ({ ...prev, auditFirm: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Source Name"
+                  className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                  value={formData.reportSource.name}
+                  onChange={(e) => setFormData(prev => ({
                     ...prev,
                     reportSource: { ...prev.reportSource, name: e.target.value }
-                  }))
-                }
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor="reportSourceUrl" className="font-semibold mb-1 text-zinc-300">
-                Source URL:
-              </label>
-              <input
-                type="url"
-                id="reportSourceUrl"
-                placeholder="https://..."
-                className="w-full border p-2 bg-zinc-800 rounded-md"
-                value={formData.reportSource.url}
-                onChange={(e) =>
-                  setFormData((prev) => ({
+                  }))}
+                />
+                <input
+                  type="url"
+                  placeholder="Source URL"
+                  className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                  value={formData.reportSource.url}
+                  onChange={(e) => setFormData(prev => ({
                     ...prev,
                     reportSource: { ...prev.reportSource, url: e.target.value }
-                  }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* Audit Firm */}
-          <div className="flex flex-col">
-            <label htmlFor="auditFirm" className="font-semibold mb-1 text-zinc-300">
-              Audit Firm:
-            </label>
-            <input
-              type="text"
-              id="auditFirm"
-              placeholder="Audit Firm Name"
-              className="flex-1 border p-2 bg-zinc-800 rounded-md"
-              value={formData.auditFirm}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, auditFirm: e.target.value }))
-              }
-            />
-          </div>
-        </div>
-
-        {/* Protocol Information */}
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <input
-            type="text"
-            placeholder="Protocol Name"
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.protocol.name}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              protocol: { ...prev.protocol, name: e.target.value }
-            }))}
-          />
-          <select
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.protocol.type}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              protocol: { ...prev.protocol, type: e.target.value }
-            }))}
-          >
-            <option value="OTHER">Select Protocol Type</option>
-            <option value="ZKEVM">ZKEVM</option>
-            <option value="ZKTRIE">ZKTRIE</option>
-            <option value="L2GETH">L2GETH</option>
-          </select>
-        </div>
-
-        {/* Severity and Difficulty */}
-        <div className="flex gap-4">
-          <select
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.severity}
-            onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
-          >
-            <option value="N/A">No Severity</option>
-            <option value="informational">Informational</option>
-            <option value="low">Low Severity</option>
-            <option value="medium">Medium Severity</option>
-            <option value="high">High Severity</option>
-            <option value="critical">Critical Severity</option>
-          </select>
-          <select
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.difficulty}
-            onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
-          >
-            <option value="N/A">No Difficulty</option>
-            <option value="low">Low Difficulty</option>
-            <option value="medium">Medium Difficulty</option>
-            <option value="high">High Difficulty</option>
-          </select>
-        </div>
-
-        {/* Tags, Frameworks, and Reporters */}
-        <div className="flex flex-col gap-4">
-          {/* Tags */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Add tag"
-              className="flex-1 border p-2 bg-zinc-800 rounded-md"
-              value={currentTag}
-              onChange={(e) => setCurrentTag(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              className="px-4 py-2 bg-zinc-700 rounded-md"
-            >
-              Add Tag
-            </button>
-          </div>
-          {formData.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {formData.tags.map((tag, index) => (
-                <span key={index} className="px-2 py-1 bg-zinc-700 rounded-md">
-                  {tag}
-                  <button
-                    type="button"
-                    className="ml-2 text-red-500"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      tags: prev.tags.filter((_, i) => i !== index)
-                    }))}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Frameworks */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Add framework"
-              className="flex-1 border p-2 bg-zinc-800 rounded-md"
-              value={currentFramework}
-              onChange={(e) => setCurrentFramework(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={handleAddFramework}
-              className="px-4 py-2 bg-zinc-700 rounded-md"
-            >
-              Add Framework
-            </button>
-          </div>
-          {formData.frameworks.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {formData.frameworks.map((framework, index) => (
-                <span key={index} className="px-2 py-1 bg-zinc-700 rounded-md">
-                  {framework}
-                  <button
-                    type="button"
-                    className="ml-2 text-red-500"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      frameworks: prev.frameworks.filter((_, i) => i !== index)
-                    }))}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Reporters */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Add reporter"
-              className="flex-1 border p-2 bg-zinc-800 rounded-md"
-              value={currentReporter}
-              onChange={(e) => setCurrentReporter(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={handleAddReporter}
-              className="px-4 py-2 bg-zinc-700 rounded-md"
-            >
-              Add Reporter
-            </button>
-          </div>
-          {formData.reported_by.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {formData.reported_by.map((reporter, index) => (
-                <span key={index} className="px-2 py-1 bg-zinc-700 rounded-md">
-                  {reporter}
-                  <button
-                    type="button"
-                    className="ml-2 text-red-500"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      reported_by: prev.reported_by.filter((_, i) => i !== index)
-                    }))}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Scope Section */}
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl">Scope</h3>
-            <button
-              type="button"
-              onClick={handleAddScope}
-              className="px-4 py-2 bg-zinc-700 rounded-md"
-            >
-              Add Scope
-            </button>
-          </div>
-          {formData.scope.map((scope, index) => (
-            <div key={index} className="flex flex-col gap-2 p-4 border border-zinc-700 rounded-md">
-              <input
-                type="text"
-                placeholder="Name"
-                className="border p-2 bg-zinc-800 rounded-md"
-                value={scope.name}
-                onChange={(e) => handleScopeChange(index, 'name', e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Repository URL"
-                className="border p-2 bg-zinc-800 rounded-md"
-                value={scope.repository}
-                onChange={(e) => handleScopeChange(index, 'repository', e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Commit Hash"
-                className="border p-2 bg-zinc-800 rounded-md"
-                value={scope.commit_hash}
-                onChange={(e) => handleScopeChange(index, 'commit_hash', e.target.value)}
-              />
-              <textarea
-                placeholder="Description"
-                className="border p-2 bg-zinc-800 rounded-md"
-                value={scope.description}
-                onChange={(e) => handleScopeChange(index, 'description', e.target.value)}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Finding ID and Target File */}
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Finding ID"
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.finding_id}
-            onChange={(e) => setFormData(prev => ({ ...prev, finding_id: e.target.value }))}
-          />
-          <input
-            type="text"
-            placeholder="Target File"
-            className="flex-1 border p-2 bg-zinc-800 rounded-md"
-            value={formData.target_file}
-            onChange={(e) => setFormData(prev => ({ ...prev, target_file: e.target.value }))}
-          />
-        </div>
-
-        {/* Image Upload Section */}
-        <div className="flex gap-4 items-center justify-between p-3">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="p-2 rounded-md"
-          />
-          <button
-            type="button"
-            className="border border-zinc-500 p-2 bg-zinc-800 text-white rounded-md"
-            onClick={handleUploadImage}
-            disabled={uploadProgress !== null}
-          >
-            {uploadProgress ? (
-              <div className="w-16 h-16">
-                <CircularProgressbar value={uploadProgress} text={`${uploadProgress}%`} />
+                  }))}
+                />
               </div>
-            ) : (
-              'Upload Image'
+            </div>
+          </div>
+
+          {/* Protocol Information */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Protocol Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Protocol Name"
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.protocol.name}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  protocol: { ...prev.protocol, name: e.target.value }
+                }))}
+              />
+              <select
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.protocol.type}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  protocol: { ...prev.protocol, type: e.target.value }
+                }))}
+              >
+                <option value="OTHER">Other</option>
+                <option value="ZKEVM">ZKEVM</option>
+                <option value="ZKTRIE">ZKTRIE</option>
+                <option value="L2GETH">L2GETH</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <select
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.severity}
+                onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
+              >
+                <option value="N/A">No Severity</option>
+                <option value="informational">Informational</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+              <select
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.difficulty}
+                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
+              >
+                <option value="N/A">No Difficulty</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="Finding ID"
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.finding_id}
+                onChange={(e) => setFormData(prev => ({ ...prev, finding_id: e.target.value }))}
+              />
+              <input
+                type="text"
+                placeholder="Target File"
+                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                value={formData.target_file}
+                onChange={(e) => setFormData(prev => ({ ...prev, target_file: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Tags and Classification */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Classification</h2>
+            
+            {/* Tags */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-zinc-300 mb-2">Tags</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="Add tag"
+                  className="flex-1 px-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                >
+                  <FiPlus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              {formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag, index) => (
+                    <span key={index} className="flex items-center gap-2 px-3 py-1 bg-zinc-700 rounded-lg text-sm">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          tags: prev.tags.filter((_, i) => i !== index)
+                        }))}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <FiX className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Frameworks */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-zinc-300 mb-2">Frameworks</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="Add framework"
+                  className="flex-1 px-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                  value={currentFramework}
+                  onChange={(e) => setCurrentFramework(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddFramework}
+                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                >
+                  <FiPlus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              {formData.frameworks.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.frameworks.map((framework, index) => (
+                    <span key={index} className="flex items-center gap-2 px-3 py-1 bg-zinc-700 rounded-lg text-sm">
+                      {framework}
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          frameworks: prev.frameworks.filter((_, i) => i !== index)
+                        }))}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <FiX className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reporters */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">Reporters</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="Add reporter"
+                  className="flex-1 px-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                  value={currentReporter}
+                  onChange={(e) => setCurrentReporter(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddReporter}
+                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                >
+                  <FiPlus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              {formData.reported_by.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.reported_by.map((reporter, index) => (
+                    <span key={index} className="flex items-center gap-2 px-3 py-1 bg-zinc-700 rounded-lg text-sm">
+                      {reporter}
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          reported_by: prev.reported_by.filter((_, i) => i !== index)
+                        }))}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <FiX className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Image Upload */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Cover Image</h2>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFile(e.target.files[0])}
+                  className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-zinc-700 file:text-white"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleUploadImage}
+                disabled={uploadProgress !== null || !file}
+                className="px-6 py-3 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 flex items-center gap-2"
+              >
+                <FiUpload className="w-4 h-4" />
+                {uploadProgress ? `${uploadProgress}%` : 'Upload'}
+              </button>
+            </div>
+
+            {uploadError && (
+              <div className="mt-4 p-3 bg-red-950/30 border border-red-800/30 rounded-lg text-red-100 text-sm">
+                {uploadError}
+              </div>
             )}
-          </button>
-        </div>
 
-        {uploadError && (
-          <div className="bg-red-500 text-white p-2 rounded-md mt-4">
-            {uploadError}
+            {formData.image && (
+              <div className="mt-4">
+                <img
+                  src={formData.image}
+                  alt="Cover"
+                  className="w-full h-48 object-cover rounded-lg border border-zinc-700/50"
+                />
+              </div>
+            )}
           </div>
-        )}
 
-        {formData.image && (
-          <img
-            src={formData.image}
-            alt="Uploaded"
-            className="w-full h-72 object-cover mt-4"
-          />
-        )}
-
-        {/* Impact and Recommendation */}
-        <div className="flex flex-col gap-4">
-          <textarea
-            placeholder="Impact"
-            className="border p-3 bg-zinc-800 rounded-md h-32"
-            value={formData.impact}
-            onChange={(e) => setFormData(prev => ({ ...prev, impact: e.target.value }))}
-          />
-          <textarea
-            placeholder="Recommendation"
-            className="border p-3 bg-zinc-800 rounded-md h-32"
-            value={formData.recommendation}
-            onChange={(e) => setFormData(prev => ({ ...prev, recommendation: e.target.value }))}
-          />
-        </div>
-
-        {/* Main Content Editor */}
-        <div className="mb-16">
-          <label className="block mb-2 text-sm font-medium">Detailed Description</label>
-          <ReactQuill
-            theme="snow"
-            placeholder="Write your detailed bug description..."
-            modules={modules}
-            formats={formats}
-            className="h-72 mb-12 bg-zinc-800"
-            required
-            value={formData.content}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, content: value }))
-            }
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="border border-zinc-700 p-2 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Publishing...' : 'Publish Bug Report'}
-        </button>
-
-        {publishError && (
-          <div className="bg-red-500 text-white p-2 rounded-md mt-5">
-            {publishError}
+          {/* Scope Section */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Scope</h2>
+              <button
+                type="button"
+                onClick={handleAddScope}
+                className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors duration-200 flex items-center gap-2"
+              >
+                <FiPlus className="w-4 h-4" />
+                Add Scope
+              </button>
+            </div>
+            <div className="space-y-4">
+              {formData.scope.map((scope, index) => (
+                <div key={index} className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-lg">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-medium text-zinc-300">Scope {index + 1}</span>
+                    {formData.scope.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveScope(index)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      className="px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                      value={scope.name}
+                      onChange={(e) => handleScopeChange(index, 'name', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Repository URL"
+                      className="px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                      value={scope.repository}
+                      onChange={(e) => handleScopeChange(index, 'repository', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Commit Hash"
+                      className="px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200"
+                      value={scope.commit_hash}
+                      onChange={(e) => handleScopeChange(index, 'commit_hash', e.target.value)}
+                    />
+                    <textarea
+                      placeholder="Description"
+                      rows="2"
+                      className="px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200 resize-none"
+                      value={scope.description}
+                      onChange={(e) => handleScopeChange(index, 'description', e.target.value)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-      </form>
+
+          {/* Impact and Recommendation */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Assessment</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Impact</label>
+                <textarea
+                  placeholder="Describe the potential impact of this vulnerability..."
+                  rows="4"
+                  className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200 resize-none"
+                  value={formData.impact}
+                  onChange={(e) => setFormData(prev => ({ ...prev, impact: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Recommendation</label>
+                <textarea
+                  placeholder="Provide recommendations to fix this vulnerability..."
+                  rows="4"
+                  className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-0 focus:border-zinc-500 transition-colors duration-200 resize-none"
+                  value={formData.recommendation}
+                  onChange={(e) => setFormData(prev => ({ ...prev, recommendation: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Editor */}
+          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Detailed Description</h2>
+            <ReactQuill
+              theme="snow"
+              placeholder="Write your detailed bug description..."
+              modules={modules}
+              formats={formats}
+              className="bg-zinc-800 rounded-lg"
+              style={{ height: '300px', marginBottom: '60px' }}
+              value={formData.content}
+              onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-8 py-3 bg-zinc-100 hover:bg-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed text-black font-medium rounded-lg transition-colors duration-200"
+            >
+              {isSubmitting ? 'Publishing...' : 'Publish Bug Report'}
+            </button>
+          </div>
+
+          {publishError && (
+            <div className="p-4 bg-red-950/30 border border-red-800/30 rounded-lg text-red-100 text-sm">
+              {publishError}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

@@ -77,7 +77,7 @@ body {
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #09090b;
+  background: #0D0D0D;
   color: #f8f8f2;
 }
 
@@ -119,9 +119,9 @@ body {
 
 /* Add this to your CSS file */
 
-/* Code block styling */
 .post-content pre {
-  background-color: #282c34;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 1rem;
   margin: 1.5rem 0;

@@ -1,11 +1,31 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useLocation} from 'react-router-dom';
+import { FiX, FiSearch } from 'react-icons/fi';
 import PostCard from '../components/PostCard';
+import Header from '../components/Header';
 import CommentSection from '../components/CommentSection';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/monokai-sublime.css';
 
+// Debounce hook for search
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 export default function Home() {
+  // Core state
   const [sidebarData, setSidebarData] = useState({
     searchTerm: '',
     sort: '',
@@ -16,95 +36,62 @@ export default function Home() {
     tags: '',
   });
 
-  // Rest of your state declarations remain the same
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [loadingPost, setLoadingPost] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [viewMode, setViewMode] = useState('list');
+  const [hasAutoSelected, setHasAutoSelected] = useState(false); // Track if we've auto-selected
+
+  // Filter state
   const [filterStats, setFilterStats] = useState({
     totalPosts: 0,
     protocols: [],
     severities: [],
   });
 
+  // Refs
+  const postsScrollRef = useRef(null);
+  const detailScrollRef = useRef(null);
+
+  // Hooks
   const location = useLocation();
-  const navigate = useNavigate();
+  const debouncedSearchTerm = useDebounce(sidebarData.searchTerm, 300);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
+  // Fetch posts function
+  const fetchPosts = useCallback(async (searchParams = '') => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/post/getposts?${searchParams}`);
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch posts');
+      }
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+      const data = await res.json();
+      setPosts(data.posts || []);
+      setShowMore((data.posts || []).length === 9);
+      setFilterStats({
+        totalPosts: data.totalPosts || 0,
+        protocols: data.stats?.protocols || [],
+        severities: data.stats?.severities || []
+      });
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setPosts([]);
+      setFilterStats({
+        totalPosts: 0,
+        protocols: [],
+        severities: []
+      });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    
-    // Update sidebar data from URL params
-    const paramsToUpdate = [
-      'searchTerm', 'sort', 'protocol', 
-      'protocolType', 'severity', 'difficulty', 'tags',
-    ];
-
-    const newSidebarData = {};
-    paramsToUpdate.forEach(param => {
-      newSidebarData[param] = urlParams.get(param) || '';
-    });
-
-    setSidebarData(prev => ({ ...prev, ...newSidebarData }));
-
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const searchQuery = urlParams.toString();
-        const res = await fetch(`/api/post/getposts?${searchQuery}`);
-        
-        if (!res.ok) {
-          throw new Error('Failed to fetch posts');
-        }
-
-        const data = await res.json();
-        setPosts(data.posts);
-        setShowMore(data.posts.length === 9);
-        setFilterStats({
-          totalPosts: data.totalPosts || 0,
-          protocols: data.stats?.protocols || [],
-          severities: data.stats?.severities || []
-        });
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, [location.search]);
-
-  const fetchFullPost = async (postId) => {
-    setLoadingPost(true);
-    try {
-      const res = await fetch(`/api/post/getposts?postId=${postId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setSelectedPost(data.posts[0]);
-        setTimeout(() => {
-          applyCodeHighlighting();
-        }, 0);
-      }
-    } catch (error) {
-      console.error('Error fetching full post:', error);
-    } finally {
-      setLoadingPost(false);
-    }
-  };
-
-  const applyCodeHighlighting = () => {
+  // Apply syntax highlighting
+  const applyCodeHighlighting = useCallback(() => {
     try {
       const contentElement = document.querySelector('.post-content');
       if (contentElement) {
@@ -122,40 +109,29 @@ export default function Home() {
     } catch (e) {
       console.error('Error applying syntax highlighting:', e);
     }
-  };
+  }, []);
 
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setSidebarData(prev => ({ ...prev, [id]: value }));
-  };
+  // Fetch full post for detail view
+  const fetchFullPost = useCallback(async (postId) => {
+    setLoadingPost(true);
+    try {
+      const res = await fetch(`/api/post/getposts?postId=${postId}`);
+      const data = await res.json();
+      if (res.ok && data.posts && data.posts[0]) {
+        setSelectedPost(data.posts[0]);
+        setTimeout(() => {
+          applyCodeHighlighting();
+        }, 0);
+      }
+    } catch (error) {
+      console.error('Error fetching full post:', error);
+    } finally {
+      setLoadingPost(false);
+    }
+  }, [applyCodeHighlighting]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const urlParams = new URLSearchParams();
-    
-    // Only add non-empty values to URL
-    Object.entries(sidebarData).forEach(([key, value]) => {
-      if (value) urlParams.set(key, value);
-    });
-
-    navigate(`/?${urlParams.toString()}`);
-    if (isMobileView) setShowSidebar(false);
-  };
-
-  const clearFilters = () => {
-    setSidebarData({
-      searchTerm: '',
-      sort: '',
-      protocol: '',
-      protocolType: '',
-      severity: '',
-      difficulty: '',
-      tags: '',
-    });
-    navigate('/');
-  };
-
-  const handleShowMore = async () => {
+  // Handle show more posts
+  const handleShowMore = useCallback(async () => {
     const numberOfPosts = posts.length;
     const urlParams = new URLSearchParams(location.search);
     urlParams.set('startIndex', numberOfPosts);
@@ -169,413 +145,320 @@ export default function Home() {
       }
 
       const data = await res.json();
-      setPosts(prevPosts => [...prevPosts, ...data.posts]);
-      setShowMore(data.posts.length === 9);
+      setPosts(prevPosts => [...prevPosts, ...(data.posts || [])]);
+      setShowMore((data.posts || []).length === 9);
     } catch (error) {
       console.error('Error fetching more posts:', error);
     }
-  };
+  }, [posts.length, location.search]);
 
-  const toggleSidebar = () => {
-    setShowSidebar(!showSidebar);
-  };
+  // Header callback handlers
+  const handleSearchChange = useCallback((newSearchData) => {
+    setSidebarData(newSearchData);
+    setHasAutoSelected(false); // Reset auto-selection when search changes
+  }, []);
 
-  const handleBackToList = () => {
-    setSelectedPost(null);
-  };
+  const handleFiltersChange = useCallback((newFiltersData) => {
+    setSidebarData(newFiltersData);
+    setHasAutoSelected(false); // Reset auto-selection when filters change
+  }, []);
+
+  const handleViewModeChange = useCallback((newViewMode) => {
+    setViewMode(newViewMode);
+  }, []);
+
+  // Effects
+  // Handle URL parameters and initial load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    
+    const paramsToUpdate = [
+      'searchTerm', 'sort', 'protocol', 
+      'protocolType', 'severity', 'difficulty', 'tags',
+    ];
+
+    const newSidebarData = {};
+    paramsToUpdate.forEach(param => {
+      newSidebarData[param] = urlParams.get(param) || '';
+    });
+
+    setSidebarData(prev => ({ ...prev, ...newSidebarData }));
+    fetchPosts(urlParams.toString());
+  }, [fetchPosts, location.search]);
+
+  // Live search effect
+  useEffect(() => {
+    if (debouncedSearchTerm !== sidebarData.searchTerm) return;
+
+    const urlParams = new URLSearchParams();
+    Object.entries(sidebarData).forEach(([key, value]) => {
+      if (value) urlParams.set(key, value);
+    });
+
+    fetchPosts(urlParams.toString());
+    
+    // Update URL without triggering navigation
+    const newUrl = urlParams.toString() ? `/?${urlParams.toString()}` : '/';
+    window.history.replaceState({}, '', newUrl);
+  }, [debouncedSearchTerm, fetchPosts, sidebarData]);
+
+  // Auto-select first post when posts load
+  useEffect(() => {
+    if (posts.length > 0 && !hasAutoSelected && !selectedPost && !loading) {
+      setHasAutoSelected(true);
+      fetchFullPost(posts[0]._id);
+    }
+  }, [posts, hasAutoSelected, selectedPost, loading, fetchFullPost]);
+
+  // Scroll to top of detail panel when new post is selected
+  useEffect(() => {
+    if (selectedPost && detailScrollRef.current) {
+      detailScrollRef.current.scrollTop = 0;
+    }
+  }, [selectedPost]);
 
   return (
-    <div className="mx-auto flex flex-col md:flex-row h-[87vh] overflow-hidden bg-zinc-950 text-gray-200">
-      {/* Mobile Toggle Button */}
-      {isMobileView && (
-        <button onClick={toggleSidebar} className="m-4 px-4 py-2 bg-zinc-900 rounded-md">
-          {showSidebar ? 'Hide Filters' : 'Show Filters'}
-        </button>
-      )}
-      
-      {/* Enhanced Sidebar */}
-      <div className={`${isMobileView ? (showSidebar ? 'block' : 'hidden') : 'block'} effect-hover1 w-full md:w-1/4 border border-zinc-900 bg-black shadow-lg m-4 mr-0 overflow-y-auto`}>
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Filters</h2>
-            <button
-              onClick={clearFilters}
-              className="text-sm text-gray-400 hover:text-white"
-            >
-              Clear All
-            </button>
-          </div>
+    <>
+      <style>
+        {`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateX(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+        `}
+      </style>
+      {/* Header with search bar and inline filters for home page */}
+      <Header 
+        onSearchChange={handleSearchChange}
+        onFiltersChange={handleFiltersChange}
+        onViewModeChange={handleViewModeChange}
+        searchData={sidebarData}
+        filterStats={filterStats}
+        viewMode={viewMode}
+        showSearch={true}
+        showFilters={true}
+      />
 
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
-            {/* Search */}
-            <div className='flex flex-col'>
-              <label htmlFor="searchTerm" className='font-semibold mb-1 text-zinc-300'>Search:</label>
-              <input
-                type="text"
-                id="searchTerm"
-                placeholder='Search in title, content, impact...'
-                value={sidebarData.searchTerm}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              />
-            </div>
-
-            {/* Protocol Filters */}
-            <div className='flex flex-col'>
-              <label htmlFor="protocol" className='font-semibold mb-1 text-zinc-300'>Protocol:</label>
-              <select
-                id="protocol"
-                value={sidebarData.protocol}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              >
-                <option value="">All Protocols</option>
-                {filterStats.protocols.map(protocol => (
-                  <option key={protocol} value={protocol}>{protocol}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className='flex flex-col'>
-              <label htmlFor="protocolType" className='font-semibold mb-1 text-zinc-300'>Protocol Type:</label>
-              <select
-                id="protocolType"
-                value={sidebarData.protocolType}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              >
-                <option value="">All Types</option>
-                <option value="ZKEVM">ZKEVM</option>
-                <option value="ZKTRIE">ZKTRIE</option>
-                <option value="L2GETH">L2GETH</option>
-                <option value="OTHER">OTHER</option>
-              </select>
-            </div>
-
-            {/* Severity and Difficulty */}
-            <div className='flex gap-2'>
-              <div className='flex flex-col flex-1'>
-                <label htmlFor="severity" className='font-semibold mb-1 text-zinc-300'>Severity:</label>
-                <select
-                  id="severity"
-                  value={sidebarData.severity}
-                  onChange={handleChange}
-                  className="bg-black text-white border border-zinc-900 rounded p-2"
-                >
-                  <option value="">All</option>
-                  <option value="N/A">N/A</option>
-                  <option value="informational">Informational</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-              <div className='flex flex-col flex-1'>
-                <label htmlFor="difficulty" className='font-semibold mb-1 text-zinc-300'>Difficulty:</label>
-                <select
-                  id="difficulty"
-                  value={sidebarData.difficulty}
-                  onChange={handleChange}
-                  className="bg-black text-white border border-zinc-900 rounded p-2"
-                >
-                  <option value="">All</option>
-                  <option value="n/a">N/A</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className='flex flex-col'>
-              <label htmlFor="tags" className='font-semibold mb-1 text-zinc-300'>Tags:</label>
-              <input
-                type="text"
-                id="tags"
-                placeholder='Comma-separated tags'
-                value={sidebarData.tags}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              />
-            </div>
-
-            {/* Sort */}
-            <div className='flex flex-col'>
-              <label htmlFor="sort" className='font-semibold mb-1 text-zinc-300'>Sort By:</label>
-              <select
-                id="sort"
-                value={sidebarData.sort}
-                onChange={handleChange}
-                className="bg-black text-white border border-zinc-900 rounded p-2"
-              >
-                <option value="">Default</option>
-                <option value="desc">Latest First</option>
-                <option value="asc">Oldest First</option>
-                <option value="severity">Severity (High to Low)</option>
-                <option value="difficulty">Difficulty (High to Low)</option>
-              </select>
-            </div>
-
-            {/* Stats Display */}
-            <div className="mt-4 p-3 bg-zinc-900 rounded-lg">
-              <h3 className="text-sm font-semibold mb-2">Current Filters:</h3>
-              <div className="text-xs text-gray-400">
-                <p>Total Posts: {filterStats.totalPosts}</p>
-                {sidebarData.protocol && <p>Protocol: {sidebarData.protocol}</p>}
-                {sidebarData.severity && <p>Severity: {sidebarData.severity}</p>}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 border border-zinc-700 transition duration-300"
-            >
-              Apply Filters
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Posts List */}
-      <div className={`${selectedPost && isMobileView ? 'hidden' : 'block'} effect-hover1 w-full md:w-1/4 border border-zinc-900 bg-black shadow-lg m-4 mr-0 overflow-y-auto`}>
-        <div className="p-4">
-          {/* List Header */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Bug Reports</h2>
-            <span className="text-sm text-gray-400">{posts.length} items</span>
-          </div>
-
-          {/* Loading State */}
-          {loading && (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!loading && posts.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-xl text-zinc-700">No bug reports found</p>
-              <p className="text-sm text-zinc-600 mt-2">Try adjusting your filters</p>
-            </div>
-          )}
-
-          {/* Posts List */}
-          <div className="flex flex-col gap-3">
-            {!loading && posts.map((post) => (
-              <PostCard 
-                key={post._id} 
-                post={post} 
-                onClick={() => {
-                  fetchFullPost(post._id);
-                  if (isMobileView) {
-                    setShowSidebar(false);
-                  }
+      <div className="bg-black text-gray-200">
+        {/* Main Content with Fixed Height and Separate Scrolling */}
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
+          <div 
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6" 
+            style={{ height: 'calc(100vh - 140px)' }}
+          >
+            {/* Posts List with Independent Scroll */}
+            <div className={`${selectedPost ? 'lg:col-span-1 hidden lg:block' : 'lg:col-span-3'} transition-all duration-300`}>
+              <div 
+                ref={postsScrollRef}
+                className="overflow-y-auto overflow-x-hidden scroll-smooth border border-zinc-800 rounded-lg bg-zinc-950/50"
+                style={{ 
+                  height: 'calc(100vh - 140px)',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#71717a transparent'
                 }}
-                isSelected={selectedPost?._id === post._id}
-              />
-            ))}
-          </div>
-
-          {/* Show More Button */}
-          {showMore && (
-            <button
-              onClick={handleShowMore}
-              className="w-full mt-4 px-4 py-2 bg-zinc-900 text-gray-300 rounded-md hover:bg-zinc-800 transition-colors"
-            >
-              Show More
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Post Detail */}
-      <div className={`${!selectedPost && isMobileView ? 'hidden' : 'block'} effect-hover1 w-full md:w-1/2 border border-zinc-900 bg-black shadow-lg m-4 overflow-y-auto`}>
-        {loadingPost ? (
-          <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-          </div>
-        ) : selectedPost ? (
-          <div className="p-6 flex flex-col h-full">
-            {/* Mobile Back Button */}
-            {isMobileView && (
-              <button 
-                onClick={handleBackToList}
-                className="mb-4 px-4 py-2 bg-zinc-800 text-white rounded-md hover:bg-zinc-700 transition-colors"
               >
-                ← Back to List
+                <div className="p-3">
+                  {/* Search Info */}
+                  {sidebarData.searchTerm && (
+                    <div className="mb-4 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <FiSearch className="w-4 h-4" />
+                        <span>Searching for: <span className="text-white">{sidebarData.searchTerm}</span></span>
+                        {loading && (
+                          <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading State */}
+                  {loading && (
+                    <div className="flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {!loading && posts.length === 0 && (
+                    <div className="text-center py-16">
+                      <div className="w-24 h-24 mx-auto mb-4 bg-zinc-800 rounded-full flex items-center justify-center">
+                        <FiSearch className="w-12 h-12 text-zinc-600" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-300 mb-2">No bug reports found</h3>
+                      <p className="text-gray-500 mb-4">Try adjusting your search criteria or filters</p>
+                    </div>
+                  )}
+
+                  {/* Posts Grid/List */}
+                  {!loading && posts.length > 0 && (
+                    <div className={`grid gap-4 ${
+                      viewMode === 'grid' && !selectedPost 
+                        ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
+                        : 'grid-cols-1'
+                    }`}>
+                      {posts.map((post) => (
+                        <PostCard 
+                          key={post._id} 
+                          post={post} 
+                          onClick={() => fetchFullPost(post._id)}
+                          isSelected={selectedPost?._id === post._id}
+                          viewMode={viewMode}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Show More Button */}
+                  {showMore && (
+                    <div className="text-center mt-6 pb-2">
+                      <button
+                        onClick={handleShowMore}
+                        className="px-6 py-3 bg-zinc-900 border border-zinc-700 text-gray-300 rounded-lg hover:bg-zinc-800 transition-colors"
+                      >
+                        Load More Reports
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Post Detail Panel with Independent Scroll */}
+            {selectedPost && (
+              <div 
+                className="lg:col-span-2 bg-black rounded-xl border border-zinc-700/50 overflow-hidden opacity-0 animate-[fadeIn_0.3s_ease-out_forwards]"
+                style={{ 
+                  height: 'calc(100vh - 140px)'
+                }}
+              >
+                {loadingPost ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-zinc-100"></div>
+                  </div>
+                ) : (
+                  <div 
+                    ref={detailScrollRef}
+                    className="h-full overflow-y-auto scroll-smooth"
+                    style={{ 
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#71717a transparent'
+                    }}
+                  >
+                    {/* Post Header */}
+                    <div className="sticky top-0 bg-black/40 backdrop-blur-lg border-b border-zinc-800/50 p-8 z-10">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white leading-tight">
+                            {selectedPost.title}
+                          </h1>
+                          <div className="flex flex-wrap gap-3">
+                            {selectedPost.protocol?.name && (
+                              <span className="px-4 py-2 bg-zinc-800/80 border border-zinc-700 rounded-full text-sm font-medium text-zinc-100">
+                                {selectedPost.protocol.name}
+                              </span>
+                            )}
+                            {selectedPost.severity && (
+                              <span className={`px-4 py-2 rounded-full text-sm font-medium border ${
+                                selectedPost.severity === 'critical' 
+                                  ? 'bg-red-950/50 border-red-800/50 text-red-100' :
+                                selectedPost.severity === 'high' 
+                                  ? 'bg-orange-950/50 border-orange-800/50 text-orange-100' :
+                                selectedPost.severity === 'medium' 
+                                  ? 'bg-yellow-950/50 border-yellow-800/50 text-yellow-100' :
+                                  'bg-green-950/50 border-green-800/50 text-green-100'
+                              }`}>
+                                {selectedPost.severity}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSelectedPost(null)}
+                          className="p-3 hover:bg-zinc-800/50 rounded-full transition-all duration-300 text-zinc-400 hover:text-white"
+                        >
+                          <FiX className="w-6 h-6" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="p-8">
+                      {/* Meta Information */}
+                      <div className="flex flex-wrap gap-6 text-sm text-zinc-400 mb-10 pb-6 border-b border-zinc-800/50">
+                        <span className="flex items-center">
+                          Published {new Date(selectedPost.publishDate).toLocaleDateString()}
+                        </span>
+                        {selectedPost.auditFirm && (
+                          <>
+                            <span className="text-zinc-600">•</span>
+                            <span className="flex items-center">By {selectedPost.auditFirm}</span>
+                          </>
+                        )}
+                        <span className="text-zinc-600">•</span>
+                        <span className="flex items-center">
+                          {Math.ceil(selectedPost.content.length / 1000)} min read
+                        </span>
+                      </div>
+
+                      {/* Main Content */}
+                      <div
+                        className="post-content prose prose-invert prose-lg max-w-none mb-12 text-zinc-200 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                      />
+
+                      {/* Impact and Recommendation */}
+                      {(selectedPost.impact || selectedPost.recommendation) && (
+                        <div className="space-y-6 mb-12">
+                          {selectedPost.impact && (
+                            <div className="p-6 bg-red-950/30 rounded-xl border border-red-800/30">
+                              <h3 className="font-bold text-lg mb-3 text-red-100 flex items-center">
+                                <span className="w-2 h-2 bg-red-400 rounded-full mr-3"></span>
+                                Impact Assessment
+                              </h3>
+                              <p className="text-zinc-200 leading-relaxed">{selectedPost.impact}</p>
+                            </div>
+                          )}
+                          {selectedPost.recommendation && (
+                            <div className="p-6 bg-green-950/30 rounded-xl border border-green-800/30">
+                              <h3 className="font-bold text-lg mb-3 text-green-100 flex items-center">
+                                <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
+                                Recommendation
+                              </h3>
+                              <p className="text-zinc-200 leading-relaxed">{selectedPost.recommendation}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Comments */}
+                      <div className="border-t border-zinc-800/50 pt-8">
+                        <h3 className="text-xl font-bold mb-6 text-white">Discussion</h3>
+                        <CommentSection postId={selectedPost._id} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Mobile: Show back button when post is selected */}
+            {selectedPost && (
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-zinc-900 border border-zinc-700 rounded-lg hover:bg-zinc-800 transition-colors"
+              >
+                <FiX className="w-5 h-5" />
               </button>
             )}
-
-            {/* Post Header */}
-            <div className="border-b border-zinc-800 pb-6">
-              <h1 className="text-3xl font-bold mb-4">
-                {selectedPost.title}
-              </h1>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {/* Protocol Badge */}
-                {selectedPost.protocol?.name && (
-                  <span className="px-3 py-1 bg-blue-900 rounded-full text-sm">
-                    {selectedPost.protocol.name} ({selectedPost.protocol.type})
-                  </span>
-                )}
-
-                {/* Severity Badge */}
-                {selectedPost.severity && (
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    selectedPost.severity === 'critical' ? 'bg-red-900 text-red-200' :
-                    selectedPost.severity === 'high' ? 'bg-orange-900 text-orange-200' :
-                    selectedPost.severity === 'medium' ? 'bg-yellow-900 text-yellow-200' :
-                    'bg-green-900 text-green-200'
-                  }`}>
-                    {selectedPost.severity} severity
-                  </span>
-                )}
-              </div>
-
-              {/* Meta Information */}
-              <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                <span>Published {new Date(selectedPost.publishDate).toLocaleDateString()}</span>
-                {selectedPost.auditFirm && (
-                  <>
-                    <span>·</span>
-                    <span>By {selectedPost.auditFirm}</span>
-                  </>
-                )}
-                
-                {selectedPost.reportSource?.name && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      Source:{' '}
-                      {selectedPost.reportSource.url ? (
-                        <a
-                          href={selectedPost.reportSource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:underline"
-                        >
-                          {selectedPost.reportSource.name}
-                        </a>
-                      ) : (
-                        selectedPost.reportSource.name
-                      )}
-                    </span>
-                  </>
-                )}
-                <span>{(selectedPost.content.length / 1000).toFixed(0)} min read</span>
-                {selectedPost.finding_id && (
-                  <>
-                    <span>·</span>
-                    <span>ID: {selectedPost.finding_id}</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Tags and Frameworks */}
-            {(selectedPost.tags?.length > 0 || selectedPost.frameworks?.length > 0) && (
-              <div className="flex flex-wrap gap-2 my-4">
-                {selectedPost.tags?.map((tag, index) => (
-                  <span key={index} className="px-2 py-1 bg-zinc-900 rounded text-sm">
-                    #{tag}
-                  </span>
-                ))}
-                {selectedPost.frameworks?.map((framework, index) => (
-                  <span key={index} className="px-2 py-1 bg-blue-900 rounded text-sm">
-                    {framework}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Scope Section */}
-            {selectedPost.scope?.length > 0 && (
-              <div className="my-6 p-4 bg-zinc-900 rounded-lg">
-                <h2 className="text-xl font-semibold mb-4">Scope</h2>
-                <div className="space-y-4">
-                  {selectedPost.scope.map((item, index) => (
-                    <div key={index} className="p-4 bg-zinc-800 rounded-lg">
-                      <h3 className="font-medium">{item.name}</h3>
-                      {item.repository && (
-                        <a 
-                          href={item.repository}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:underline text-sm break-all"
-                        >
-                          {item.repository}
-                        </a>
-                      )}
-                      {item.commit_hash && (
-                        <p className="text-gray-400 text-sm mt-1">
-                          Commit: {item.commit_hash}
-                        </p>
-                      )}
-                      {item.description && (
-                        <p className="text-sm mt-2">{item.description}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Main Content */}
-            <div className="my-6">
-              <div
-                className="post-content prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-              ></div>
-            </div>
-
-            {/* Impact and Recommendation */}
-            {(selectedPost.impact || selectedPost.recommendation) && (
-              <div className="space-y-4 my-6">
-                {selectedPost.impact && (
-                  <div className="p-4 bg-red-900/20 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-2">Impact</h2>
-                    <p>{selectedPost.impact}</p>
-                  </div>
-                )}
-                {selectedPost.recommendation && (
-                  <div className="p-4 bg-green-900/20 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-2">Recommendation</h2>
-                    <p>{selectedPost.recommendation}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Reporters */}
-            {selectedPost.reported_by?.length > 0 && (
-              <div className="mt-6 border-t border-zinc-800 pt-4">
-                <h2 className="text-lg font-semibold mb-2">Reported By</h2>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPost.reported_by.map((reporter, index) => (
-                    <span key={index} className="px-3 py-1 bg-zinc-800 rounded-full text-sm">
-                      {reporter}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Comments Section */}
-            <div className="mt-8 border-t border-zinc-800 pt-6">
-              <CommentSection postId={selectedPost._id} />
-            </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-700">
-            <p className="text-xl">Select a bug report to view details</p>
-            <p className="text-sm mt-2">Click on any item from the list to view its details</p>
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

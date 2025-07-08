@@ -53,7 +53,7 @@ const processContent = (contentArray) => {
 const importData = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGO);
+    await mongoose.connect(process.env.MONGO + '/test');
     console.log('Connected to MongoDB');
 
     // Read your JSON data file

@@ -105,10 +105,20 @@ export const getcomments = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sort === 'desc' ? -1 : 1;
+    
     const comments = await Comment.find()
+      .populate({
+        path: 'userId',
+        select: 'username email profilePicture'
+      })
+      .populate({
+        path: 'postId', 
+        select: 'title slug'
+      })
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
+
     const totalComments = await Comment.countDocuments();
     const now = new Date();
     const oneMonthAgo = new Date(
@@ -119,7 +129,12 @@ export const getcomments = async (req, res, next) => {
     const lastMonthComments = await Comment.countDocuments({
       createdAt: { $gte: oneMonthAgo },
     });
-    res.status(200).json({ comments, totalComments, lastMonthComments });
+    
+    res.status(200).json({ 
+      comments, 
+      totalComments, 
+      lastMonthComments 
+    });
   } catch (error) {
     next(error);
   }
