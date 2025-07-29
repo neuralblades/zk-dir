@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocation} from 'react-router-dom';
-import { FiX, FiSearch } from 'react-icons/fi';
+import { FiX, FiSearch, FiExternalLink } from 'react-icons/fi';
 import PostCard from '../components/PostCard';
 import Header from '../components/Header';
 import CommentSection from '../components/CommentSection';
@@ -95,15 +95,73 @@ export default function Home() {
     try {
       const contentElement = document.querySelector('.post-content');
       if (contentElement) {
-        contentElement.querySelectorAll('pre.ql-syntax').forEach((preBlock) => {
+        // Handle ReactQuill's code blocks (pre.ql-syntax without code tag)
+        contentElement.querySelectorAll('pre.ql-syntax:not(:has(code))').forEach((preBlock) => {
           const code = document.createElement('code');
           code.innerHTML = preBlock.innerHTML;
           preBlock.innerHTML = '';
           preBlock.appendChild(code);
         });
 
-        document.querySelectorAll('pre code').forEach((block) => {
+        // Also handle any existing pre > code blocks that might not have ql-syntax class
+        contentElement.querySelectorAll('pre:not(.ql-syntax)').forEach((preBlock) => {
+          if (!preBlock.querySelector('code')) {
+            const code = document.createElement('code');
+            code.innerHTML = preBlock.innerHTML;
+            preBlock.innerHTML = '';
+            preBlock.appendChild(code);
+          }
+        });
+
+        // Apply highlighting to all code blocks
+        contentElement.querySelectorAll('pre code').forEach((block) => {
           hljs.highlightElement(block);
+        });
+
+        // Add copy buttons with improved styling
+        contentElement.querySelectorAll('pre').forEach((preBlock) => {
+          if (!preBlock.querySelector('.copy-button')) {
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.textContent = 'Copy';
+            copyButton.style.cssText = `
+              position: absolute;
+              right: 10px;
+              top: 10px;
+              padding: 4px 8px;
+              background-color: #444;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              font-size: 12px;
+              cursor: pointer;
+              opacity: 0.7;
+              z-index: 10;
+              transition: opacity 0.2s;
+            `;
+            
+            copyButton.addEventListener('mouseenter', () => {
+              copyButton.style.opacity = '1';
+            });
+            
+            copyButton.addEventListener('mouseleave', () => {
+              copyButton.style.opacity = '0.7';
+            });
+            
+            copyButton.addEventListener('click', () => {
+              const code = preBlock.querySelector('code');
+              if (code) {
+                navigator.clipboard.writeText(code.textContent);
+                copyButton.textContent = 'Copied!';
+                setTimeout(() => {
+                  copyButton.textContent = 'Copy';
+                }, 2000);
+              }
+            });
+            
+            preBlock.style.position = 'relative';
+            preBlock.appendChild(copyButton);
+          }
         });
       }
     } catch (e) {
@@ -363,6 +421,11 @@ export default function Home() {
                                 {selectedPost.protocol.name}
                               </span>
                             )}
+                            {selectedPost.type && (
+                              <span className="px-4 py-2 bg-purple-950/50 border border-purple-800/50 text-purple-100 rounded-full text-sm font-medium">
+                                {selectedPost.type}
+                              </span>
+                            )}
                             {selectedPost.severity && (
                               <span className={`px-4 py-2 rounded-full text-sm font-medium border ${
                                 selectedPost.severity === 'critical' 
@@ -406,6 +469,113 @@ export default function Home() {
                         </span>
                       </div>
 
+                      {/* Enhanced Report Details */}
+                      {(selectedPost.auditFirm || selectedPost.reportSource?.name || selectedPost.report_url) && (
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
+                          <h3 className="text-lg font-semibold mb-4 text-white">Report Details</h3>
+                          <div className="space-y-3">
+                            {selectedPost.auditFirm && (
+                              <div>
+                                <span className="text-zinc-400">Audit Firm:</span>
+                                <span className="ml-2 text-white font-medium">{selectedPost.auditFirm}</span>
+                              </div>
+                            )}
+                            {selectedPost.reportSource?.name && (
+                              <div>
+                                <span className="text-zinc-400">Reported by:</span>
+                                <span className="ml-2 text-white">{selectedPost.reportSource.name}</span>
+                              </div>
+                            )}
+                            {(selectedPost.reportSource?.url || selectedPost.report_url) && (
+                              <div>
+                                <a 
+                                  href={selectedPost.reportSource?.url || selectedPost.report_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                                >
+                                  View Full Report
+                                  <FiExternalLink className="w-4 h-4" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Enhanced Security Researchers */}
+                      {selectedPost.reported_by?.length > 0 && (
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
+                          <h3 className="text-lg font-medium text-zinc-300 mb-3">Security Researchers</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedPost.reported_by.map((reporter, index) => (
+                              <span key={index} className="px-3 py-1 bg-zinc-700 rounded-lg text-sm">
+                                {reporter}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Enhanced Scope Section */}
+                      {selectedPost.scope?.length > 0 && (
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
+                          <h3 className="text-lg font-semibold mb-4 text-white">Affected Components</h3>
+                          <div className="space-y-3">
+                            {selectedPost.scope.map((scope, index) => (
+                              <div key={index} className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-lg">
+                                <div className="flex items-start justify-between mb-3">
+                                  <h4 className="font-medium text-white text-lg">{scope.name || `Component ${index + 1}`}</h4>
+                                  {scope.repository && (
+                                    <a 
+                                      href={scope.repository}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-950/30 border border-blue-800/30 text-blue-100 rounded-md text-sm hover:bg-blue-900/30 transition-colors"
+                                    >
+                                      <FiExternalLink className="w-3 h-3" />
+                                      Repository
+                                    </a>
+                                  )}
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  {scope.repository && (
+                                    <div className="text-sm">
+                                      <span className="text-zinc-400">Repository:</span>
+                                      <a 
+                                        href={scope.repository} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="ml-2 text-blue-400 hover:text-blue-300 break-all font-mono text-xs"
+                                      >
+                                        {scope.repository}
+                                      </a>
+                                    </div>
+                                  )}
+                                  
+                                  {scope.commit_hash && (
+                                    <div className="text-sm">
+                                      <span className="text-zinc-400">Commit:</span>
+                                      <code className="ml-2 px-2 py-1 bg-zinc-700 rounded text-xs font-mono text-green-400">
+                                        {scope.commit_hash}
+                                      </code>
+                                    </div>
+                                  )}
+                                  
+                                  {scope.description && scope.description.trim() && (
+                                    <div className="text-sm mt-3">
+                                      <span className="text-zinc-400">Description:</span>
+                                      <p className="mt-1 text-zinc-300">{scope.description}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Main Content */}
                       <div
                         className="post-content prose prose-invert prose-lg max-w-none mb-12 text-zinc-200 leading-relaxed"
@@ -433,6 +603,26 @@ export default function Home() {
                               <p className="text-zinc-200 leading-relaxed">{selectedPost.recommendation}</p>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* Target File */}
+                      {selectedPost.target_file && (
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
+                          <h3 className="text-lg font-semibold mb-3 text-white">Target File</h3>
+                          <code className="text-sm break-all bg-zinc-800 px-3 py-2 rounded text-green-400 font-mono">
+                            {selectedPost.target_file}
+                          </code>
+                        </div>
+                      )}
+
+                      {/* Finding ID */}
+                      {selectedPost.finding_id && (
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
+                          <h3 className="text-lg font-semibold mb-3 text-white">Finding ID</h3>
+                          <code className="text-sm bg-zinc-800 px-3 py-2 rounded text-yellow-400 font-mono">
+                            {selectedPost.finding_id}
+                          </code>
                         </div>
                       )}
 
