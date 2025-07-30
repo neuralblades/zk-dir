@@ -603,11 +603,14 @@ export default function Home() {
 
                       {/* Enhanced Security Researchers */}
                       {selectedPost.reported_by?.length > 0 && (
-                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
-                          <h3 className="text-lg font-medium text-zinc-300 mb-3">Security Researchers</h3>
-                          <div className="flex flex-wrap gap-2">
+                        <div className="mb-8">
+                          <h3 className="text-lg font-medium text-zinc-300 mb-4 flex items-center">
+                            <span className="w-1 h-6 bg-zinc-600 rounded-full mr-3"></span>
+                            Security Researchers
+                          </h3>
+                          <div className="flex flex-wrap gap-3 pl-4">
                             {selectedPost.reported_by.map((reporter, index) => (
-                              <span key={index} className="px-3 py-1 bg-zinc-700 rounded-lg text-sm">
+                              <span key={index} className="px-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-sm hover:bg-zinc-700/50 transition-colors">
                                 {reporter}
                               </span>
                             ))}
@@ -615,56 +618,64 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Enhanced Scope Section */}
+                      {/* Enhanced Scope Section - Card Style */}
                       {selectedPost.scope?.length > 0 && (
-                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
-                          <h3 className="text-lg font-semibold mb-4 text-white">Affected Components</h3>
-                          <div className="space-y-3">
+                        <div className="mb-10">
+                          <h3 className="text-xl font-semibold mb-6 flex items-center">
+                            <span className="w-1 h-7 bg-blue-500 rounded-full mr-3"></span>
+                            Affected Components
+                          </h3>
+                          <div className="grid gap-4 lg:grid-cols-2">
                             {selectedPost.scope.map((scope, index) => (
-                              <div key={index} className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-lg">
-                                <div className="flex items-start justify-between mb-3">
-                                  <h4 className="font-medium text-white text-lg">{scope.name || `Component ${index + 1}`}</h4>
+                              <div key={index} className="group p-5 bg-gradient-to-br from-zinc-900/80 to-zinc-800/40 border border-zinc-700/30 rounded-xl hover:border-zinc-600/50 transition-all duration-300">
+                                <div className="flex items-start justify-between mb-4">
+                                  <h4 className="text-white font-semibold text-base group-hover:text-blue-100 transition-colors">
+                                    {scope.name || `Component ${index + 1}`}
+                                  </h4>
                                   {scope.repository && (
                                     <a 
                                       href={scope.repository}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-950/30 border border-blue-800/30 text-blue-100 rounded-md text-sm hover:bg-blue-900/30 transition-colors"
+                                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600/20 border border-blue-500/30 text-blue-200 rounded-md text-xs hover:bg-blue-600/30 transition-colors"
                                     >
                                       <FiExternalLink className="w-3 h-3" />
-                                      Repository
+                                      Repo
                                     </a>
                                   )}
                                 </div>
                                 
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                   {scope.repository && (
                                     <div className="text-sm">
-                                      <span className="text-zinc-400">Repository:</span>
-                                      <a 
-                                        href={scope.repository} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="ml-2 text-blue-400 hover:text-blue-300 break-all font-mono text-xs"
-                                      >
-                                        {scope.repository}
-                                      </a>
+                                      <span className="text-zinc-500 text-xs uppercase tracking-wide">Repository</span>
+                                      <div className="mt-1">
+                                        <a 
+                                          href={scope.repository} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="text-blue-400 hover:text-blue-300 break-all font-mono text-xs bg-zinc-800/50 px-2 py-1 rounded"
+                                        >
+                                          {scope.repository}
+                                        </a>
+                                      </div>
                                     </div>
                                   )}
                                   
                                   {scope.commit_hash && (
                                     <div className="text-sm">
-                                      <span className="text-zinc-400">Commit:</span>
-                                      <code className="ml-2 px-2 py-1 bg-zinc-700 rounded text-xs font-mono text-green-400">
-                                        {scope.commit_hash}
-                                      </code>
+                                      <span className="text-zinc-500 text-xs uppercase tracking-wide">Commit Hash</span>
+                                      <div className="mt-1">
+                                        <code className="px-2 py-1 bg-zinc-800/80 border border-zinc-700/50 rounded text-xs font-mono text-green-400">
+                                          {scope.commit_hash}
+                                        </code>
+                                      </div>
                                     </div>
                                   )}
                                   
                                   {scope.description && scope.description.trim() && (
-                                    <div className="text-sm mt-3">
-                                      <span className="text-zinc-400">Description:</span>
-                                      <p className="mt-1 text-zinc-300">{scope.description}</p>
+                                    <div className="text-sm mt-3 pt-3 border-t border-zinc-700/30">
+                                      <p className="text-zinc-300 leading-relaxed text-xs">{scope.description}</p>
                                     </div>
                                   )}
                                 </div>
@@ -674,55 +685,82 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Main Content */}
-                      <div
-                        className="post-content prose prose-invert prose-lg max-w-none mb-12 text-zinc-200 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-                      />
+                      {/* Main Content - Clean Layout */}
+                      <div className="mb-10">
+                        <div className="flex items-center mb-6">
+                          <span className="w-1 h-7 bg-green-500 rounded-full mr-3"></span>
+                          <h3 className="text-xl font-semibold">Technical Details</h3>
+                        </div>
+                        <div className="pl-4">
+                          <div
+                            className="post-content prose prose-invert prose-lg max-w-none text-zinc-200 leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                          />
+                        </div>
+                      </div>
 
-                      {/* Impact and Recommendation */}
+                      {/* Impact and Recommendation - Stacked for Detail View */}
                       {(selectedPost.impact || selectedPost.recommendation) && (
-                        <div className="space-y-6 mb-12">
+                        <div className="mb-10 grid gap-8 lg:grid-cols-2">
                           {selectedPost.impact && (
-                            <div className="p-6 bg-red-950/30 rounded-xl border border-red-800/30">
-                              <h3 className="font-bold text-lg mb-3 text-red-100 flex items-center">
-                                <span className="w-2 h-2 bg-red-400 rounded-full mr-3"></span>
-                                Impact Assessment
-                              </h3>
-                              <p className="text-zinc-200 leading-relaxed">{selectedPost.impact}</p>
+                            <div className="relative">
+                              <div className="absolute -left-2 top-0 w-1 h-full bg-red-500 rounded-full"></div>
+                              <div className="pl-5">
+                                <h3 className="text-lg font-semibold mb-4 text-red-100 flex items-center">
+                                  <span className="w-3 h-3 bg-red-500 rounded-full mr-3"></span>
+                                  Impact Assessment
+                                </h3>
+                                <div className="bg-red-950/20 border-l-4 border-red-500/50 pl-4 py-3">
+                                  <p className="text-zinc-200 leading-relaxed">{selectedPost.impact}</p>
+                                </div>
+                              </div>
                             </div>
                           )}
                           {selectedPost.recommendation && (
-                            <div className="p-6 bg-green-950/30 rounded-xl border border-green-800/30">
-                              <h3 className="font-bold text-lg mb-3 text-green-100 flex items-center">
-                                <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
-                                Recommendation
-                              </h3>
-                              <p className="text-zinc-200 leading-relaxed">{selectedPost.recommendation}</p>
+                            <div className="relative">
+                              <div className="absolute -left-2 top-0 w-1 h-full bg-green-500 rounded-full"></div>
+                              <div className="pl-5">
+                                <h3 className="text-lg font-semibold mb-4 text-green-100 flex items-center">
+                                  <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                                  Recommended Solution
+                                </h3>
+                                <div className="bg-green-950/20 border-l-4 border-green-500/50 pl-4 py-3">
+                                  <p className="text-zinc-200 leading-relaxed">{selectedPost.recommendation}</p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
                       )}
 
-                      {/* Target File */}
-                      {selectedPost.target_file && (
-                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
-                          <h3 className="text-lg font-semibold mb-3 text-white">Target File</h3>
-                          <code className="text-sm break-all bg-zinc-800 px-3 py-2 rounded text-green-400 font-mono">
-                            {selectedPost.target_file}
-                          </code>
-                        </div>
-                      )}
+                      {/* Technical Details - Inline Style */}
+                      <div className="mb-8 space-y-4">
+                        {selectedPost.target_file && (
+                          <div className="flex items-start gap-4 py-3 border-b border-zinc-800/50">
+                            <div className="flex-shrink-0 w-24">
+                              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target File</span>
+                            </div>
+                            <div className="flex-1">
+                              <code className="text-sm break-all bg-zinc-900/50 px-3 py-2 rounded-lg text-green-400 font-mono">
+                                {selectedPost.target_file}
+                              </code>
+                            </div>
+                          </div>
+                        )}
 
-                      {/* Finding ID */}
-                      {selectedPost.finding_id && (
-                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 mb-8">
-                          <h3 className="text-lg font-semibold mb-3 text-white">Finding ID</h3>
-                          <code className="text-sm bg-zinc-800 px-3 py-2 rounded text-yellow-400 font-mono">
-                            {selectedPost.finding_id}
-                          </code>
-                        </div>
-                      )}
+                        {selectedPost.finding_id && (
+                          <div className="flex items-start gap-4 py-3 border-b border-zinc-800/50">
+                            <div className="flex-shrink-0 w-24">
+                              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Finding ID</span>
+                            </div>
+                            <div className="flex-1">
+                              <code className="text-sm bg-zinc-900/50 px-3 py-2 rounded-lg text-yellow-400 font-mono">
+                                {selectedPost.finding_id}
+                              </code>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Comments */}
                       <div className="border-t border-zinc-800/50 pt-8">
