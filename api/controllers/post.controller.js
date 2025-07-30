@@ -155,7 +155,6 @@ export const getposts = async (req, res, next) => {
         }
       }
     ]);
-    console.log('First post scope from DB:', posts[0]?.scope);
     res.status(200).json({
       posts,
       totalPosts,
