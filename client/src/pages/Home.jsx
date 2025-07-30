@@ -497,7 +497,7 @@ export default function Home() {
                     <div className="sticky top-0 bg-black/40 backdrop-blur-lg border-b border-zinc-800/50 p-8 z-10">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white leading-tight">
+                          <h1 className="text-3xl font-semibold mb-4 text-white leading-tight">
                             {selectedPost.title}
                           </h1>
                           <div className="flex flex-wrap gap-3">
