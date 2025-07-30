@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import CommentSection from '../components/CommentSection';
-import { FiArrowLeft, FiEdit, FiExternalLink, FiCalendar } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit, FiExternalLink, FiCalendar, FiShare2, FiCheck } from 'react-icons/fi';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/monokai-sublime.css';
 
@@ -11,6 +11,7 @@ export default function PostPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [post, setPost] = useState(null);
+  const [showShareSuccess, setShowShareSuccess] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
 
   useEffect(() => {
@@ -42,6 +43,33 @@ export default function PostPage() {
       fetchPost();
     }
   }, [postSlug]);
+
+  // Share post with current URL parameters
+  const sharePost = async () => {
+    try {
+      // Get the current full URL (including any filter parameters)
+      const currentUrl = window.location.href;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(currentUrl);
+      
+      // Show success feedback
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+      // Fallback: create a temporary input to copy
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    }
+  };
 
   // Apply syntax highlighting when post content loads
   useEffect(() => {
@@ -220,15 +248,37 @@ export default function PostPage() {
           <FiArrowLeft className="w-4 h-4" />
           Back to Posts
         </Link>
-        {currentUser && currentUser.isAdmin && (
-          <Link 
-            to={`/update-post/${post._id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
+        <div className="flex items-center gap-3">
+          {/* Share Button */}
+          <button
+            onClick={sharePost}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-zinc-300 hover:text-white"
+            title="Share Post"
           >
-            <FiEdit className="w-4 h-4" />
-            Edit Post
-          </Link>
-        )}
+            {showShareSuccess ? (
+              <>
+                <FiCheck className="w-4 h-4 text-green-400" />
+                <span className="text-green-400">Copied!</span>
+              </>
+            ) : (
+              <>
+                <FiShare2 className="w-4 h-4" />
+                <span>Share</span>
+              </>
+            )}
+          </button>
+          
+          {/* Edit Button (Admin only) */}
+          {currentUser && currentUser.isAdmin && (
+            <Link 
+              to={`/update-post/${post._id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
+            >
+              <FiEdit className="w-4 h-4" />
+              Edit Post
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Header Section */}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useLocation} from 'react-router-dom';
-import { FiX, FiSearch, FiExternalLink } from 'react-icons/fi';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FiX, FiSearch, FiExternalLink, FiShare2, FiCheck } from 'react-icons/fi';
 import PostCard from '../components/PostCard';
 import Header from '../components/Header';
 import CommentSection from '../components/CommentSection';
@@ -25,15 +25,21 @@ const useDebounce = (value, delay) => {
 };
 
 export default function Home() {
-  // Core state
-  const [sidebarData, setSidebarData] = useState({
-    searchTerm: '',
-    sort: '',
-    protocol: '',
-    protocolType: '',
-    severity: '',
-    difficulty: '',
-    tags: '',
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Initialize state with URL parameters
+  const [sidebarData, setSidebarData] = useState(() => {
+    const urlParams = new URLSearchParams(location.search);
+    return {
+      searchTerm: '',
+      sort: urlParams.get('sort') || '',
+      protocol: urlParams.get('protocol') || '',
+      protocolType: urlParams.get('protocolType') || '',
+      severity: urlParams.get('severity') || '',
+      difficulty: urlParams.get('difficulty') || '',
+      tags: urlParams.get('tags') || '',
+    };
   });
 
   const [posts, setPosts] = useState([]);
@@ -42,7 +48,8 @@ export default function Home() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [loadingPost, setLoadingPost] = useState(false);
   const [viewMode, setViewMode] = useState('list');
-  const [hasAutoSelected, setHasAutoSelected] = useState(false); // Track if we've auto-selected
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [showShareSuccess, setShowShareSuccess] = useState(false);
 
   // Filter state
   const [filterStats, setFilterStats] = useState({
@@ -56,7 +63,6 @@ export default function Home() {
   const detailScrollRef = useRef(null);
 
   // Hooks
-  const location = useLocation();
   const debouncedSearchTerm = useDebounce(sidebarData.searchTerm, 300);
 
   // Fetch posts function
@@ -191,7 +197,14 @@ export default function Home() {
   // Handle show more posts
   const handleShowMore = useCallback(async () => {
     const numberOfPosts = posts.length;
-    const urlParams = new URLSearchParams(location.search);
+    const urlParams = new URLSearchParams();
+    
+    // Include current filters in the show more request
+    Object.entries(sidebarData).forEach(([key, value]) => {
+      if (value && value !== '') {
+        urlParams.set(key, value);
+      }
+    });
     urlParams.set('startIndex', numberOfPosts);
 
     try {
@@ -208,57 +221,129 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching more posts:', error);
     }
-  }, [posts.length, location.search]);
+  }, [posts.length, sidebarData]);
 
   // Header callback handlers
   const handleSearchChange = useCallback((newSearchData) => {
     setSidebarData(newSearchData);
-    setHasAutoSelected(false); // Reset auto-selection when search changes
+    setHasAutoSelected(false);
   }, []);
 
   const handleFiltersChange = useCallback((newFiltersData) => {
     setSidebarData(newFiltersData);
-    setHasAutoSelected(false); // Reset auto-selection when filters change
-  }, []);
+    setHasAutoSelected(false);
+    
+    // Update URL when filters change (but not search term)
+    const params = new URLSearchParams();
+    Object.entries(newFiltersData).forEach(([key, value]) => {
+      if (value && value !== '' && key !== 'searchTerm') {
+        params.append(key, value);
+      }
+    });
+    
+    const newUrl = params.toString() ? `/home?${params.toString()}` : '/home';
+    navigate(newUrl, { replace: true });
+  }, [navigate]);
 
   const handleViewModeChange = useCallback((newViewMode) => {
     setViewMode(newViewMode);
   }, []);
 
+  // Share post with current filters
+  const sharePost = async (postSlug) => {
+    try {
+      // Create URL with current filter parameters and post slug
+      const params = new URLSearchParams();
+      
+      // Add non-empty filter values to URL params
+      Object.entries(sidebarData).forEach(([key, value]) => {
+        if (value && value !== '' && key !== 'searchTerm') {
+          params.append(key, value);
+        }
+      });
+
+      // Generate the shareable URL with post slug
+      const baseUrl = window.location.origin;
+      const shareUrl = params.toString() 
+        ? `${baseUrl}/post/${postSlug}?${params.toString()}` 
+        : `${baseUrl}/post/${postSlug}`;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      
+      // Show success feedback
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+      // Fallback: create a temporary input to copy
+      const textArea = document.createElement('textarea');
+      const params = new URLSearchParams();
+      Object.entries(sidebarData).forEach(([key, value]) => {
+        if (value && value !== '' && key !== 'searchTerm') {
+          params.append(key, value);
+        }
+      });
+      const baseUrl = window.location.origin;
+      const shareUrl = params.toString() 
+        ? `${baseUrl}/post/${postSlug}?${params.toString()}` 
+        : `${baseUrl}/post/${postSlug}`;
+      
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    }
+  };
+
   // Effects
-  // Handle URL parameters and initial load
+  // Handle URL parameters on mount and URL changes
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     
-    const paramsToUpdate = [
-      'searchTerm', 'sort', 'protocol', 
-      'protocolType', 'severity', 'difficulty', 'tags',
-    ];
+    const urlFilters = {
+      searchTerm: sidebarData.searchTerm, // Keep existing search term
+      sort: urlParams.get('sort') || '',
+      protocol: urlParams.get('protocol') || '',
+      protocolType: urlParams.get('protocolType') || '',
+      severity: urlParams.get('severity') || '',
+      difficulty: urlParams.get('difficulty') || '',
+      tags: urlParams.get('tags') || '',
+    };
 
-    const newSidebarData = {};
-    paramsToUpdate.forEach(param => {
-      newSidebarData[param] = urlParams.get(param) || '';
-    });
+    // Check if there are differences (excluding searchTerm)
+    const hasChanges = Object.keys(urlFilters).some(
+      key => key !== 'searchTerm' && urlFilters[key] !== sidebarData[key]
+    );
 
-    setSidebarData(prev => ({ ...prev, ...newSidebarData }));
+    if (hasChanges) {
+      setSidebarData(urlFilters);
+      setHasAutoSelected(false);
+    }
+
+    // Always fetch posts with current URL params on mount or URL change
     fetchPosts(urlParams.toString());
-  }, [fetchPosts, location.search]);
+  }, [location.search, fetchPosts]);
 
-  // Live search effect
+  // Live search effect for search term only
   useEffect(() => {
     if (debouncedSearchTerm !== sidebarData.searchTerm) return;
 
-    const urlParams = new URLSearchParams();
-    Object.entries(sidebarData).forEach(([key, value]) => {
-      if (value) urlParams.set(key, value);
-    });
+    const urlParams = new URLSearchParams(location.search);
+    
+    // Add search term to existing URL params
+    if (sidebarData.searchTerm) {
+      urlParams.set('searchTerm', sidebarData.searchTerm);
+    } else {
+      urlParams.delete('searchTerm');
+    }
 
     fetchPosts(urlParams.toString());
-    
-    // Update URL without triggering navigation
-    const newUrl = urlParams.toString() ? `/?${urlParams.toString()}` : '/';
-    window.history.replaceState({}, '', newUrl);
-  }, [debouncedSearchTerm, fetchPosts, sidebarData]);
+  }, [debouncedSearchTerm, sidebarData.searchTerm, location.search, fetchPosts]);
 
   // Auto-select first post when posts load
   useEffect(() => {
@@ -441,16 +526,29 @@ export default function Home() {
                             )}
                           </div>
                         </div>
-                        <button
-                          onClick={() => setSelectedPost(null)}
-                          className="p-3 hover:bg-zinc-800/50 rounded-full transition-all duration-300 text-zinc-400 hover:text-white"
-                        >
-                          <FiX className="w-6 h-6" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => sharePost(selectedPost.slug)}
+                            className="p-3 hover:bg-zinc-800/50 rounded-full transition-all duration-300 text-zinc-400 hover:text-white"
+                            title="Share Post"
+                          >
+                            {showShareSuccess ? (
+                              <FiCheck className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <FiShare2 className="w-5 h-5" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setSelectedPost(null)}
+                            className="p-3 hover:bg-zinc-800/50 rounded-full transition-all duration-300 text-zinc-400 hover:text-white"
+                          >
+                            <FiX className="w-6 h-6" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Post Content */}
+                    {/* Post Content - Rest of your existing JSX remains the same */}
                     <div className="p-8">
                       {/* Meta Information */}
                       <div className="flex flex-wrap gap-6 text-sm text-zinc-400 mb-10 pb-6 border-b border-zinc-800/50">

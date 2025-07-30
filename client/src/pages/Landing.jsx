@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 
 // Animation variants
@@ -10,10 +11,26 @@ const fadeIn = {
 
 export default function Landing() {
   const [isVisible, setIsVisible] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser } = useSelector(state => state.user);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  useEffect(() => {
+    // Check if URL has filter parameters
+    const urlParams = new URLSearchParams(location.search);
+    const hasFilterParams = ['protocol', 'severity', 'sort', 'protocolType', 'difficulty', 'tags'].some(
+      param => urlParams.has(param)
+    );
+
+    // If user is logged in and URL has filter parameters, redirect to home with filters
+    if (currentUser && hasFilterParams) {
+      navigate(`/home${location.search}`, { replace: true });
+    }
+  }, [location.search, currentUser, navigate]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black text-white">

@@ -60,17 +60,17 @@ export default function PostCard({ post, onClick, onRemoveBookmark, isSelected }
         {/* Header Section */}
         <div className="flex gap-4 mb-4">
           {/* Thumbnail */}
-          <div className="flex-shrink-0">
+          {/* <div className="flex-shrink-0">
             <img
               src={post.image}
               alt="post cover"
               className="h-16 w-16 object-cover rounded-lg border border-zinc-700"
             />
-          </div>
+          </div> */}
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">
+            <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
               {post.title}
             </h3>
             
@@ -86,16 +86,16 @@ export default function PostCard({ post, onClick, onRemoveBookmark, isSelected }
                   <span className="text-zinc-300 font-medium">{post.auditFirm}</span>
                 </>
               )}
-              {post.finding_id && (
+              {/* {post.finding_id && (
                 <>
                   <span className="text-zinc-600">•</span>
                   <span className="text-zinc-500 font-mono text-xs">ID: {post.finding_id}</span>
                 </>
-              )}
+              )} */}
               {post.protocol?.name && (
                 <>
                   <span className="text-zinc-600">•</span>
-                  <span className="text-zinc-300 font-medium">Protocol: {post.protocol.name}</span>
+                  <span className="text-zinc-500 font-xs">{post.protocol.name}</span>
                 </>
               )}
             </div>

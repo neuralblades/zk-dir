@@ -16,7 +16,9 @@ import {
   FiSearch,
   FiFilter,
   FiList,
-  FiGrid
+  FiGrid,
+  FiShare2,
+  FiCheck
 } from 'react-icons/fi';
 
 export default function Header({ 
@@ -40,9 +42,11 @@ export default function Header({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showShareSuccess, setShowShareSuccess] = useState(false);
   
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
+  const filterPanelRef = useRef(null);
 
   const handleSignout = async () => {
     try {
@@ -65,9 +69,59 @@ export default function Header({
     onFiltersChange?.({ ...searchData, [id]: value });
   };
 
+  const applyFilters = () => {
+    setShowFilterPanel(false);
+  };
+
+  const shareFilters = async () => {
+    try {
+      // Create URL with current filter parameters
+      const params = new URLSearchParams();
+      
+      // Add non-empty filter values to URL params
+      Object.entries(searchData).forEach(([key, value]) => {
+        if (value && value !== '' && key !== 'searchTerm') {
+          params.append(key, value);
+        }
+      });
+
+      // Generate the shareable URL
+      const baseUrl = window.location.origin + window.location.pathname;
+      const shareUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      
+      // Show success feedback
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+      // Fallback: create a temporary input to copy
+      const textArea = document.createElement('textarea');
+      const params = new URLSearchParams();
+      Object.entries(searchData).forEach(([key, value]) => {
+        if (value && value !== '' && key !== 'searchTerm') {
+          params.append(key, value);
+        }
+      });
+      const baseUrl = window.location.origin + window.location.pathname;
+      const shareUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+      
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    }
+  };
+
   const clearFilters = () => {
     const clearedData = {
-      searchTerm: '',
+      searchTerm: searchData.searchTerm || '', // Keep search term
       sort: '',
       protocol: '',
       protocolType: '',
@@ -80,7 +134,8 @@ export default function Header({
   };
 
   const getActiveFiltersCount = () => {
-    return Object.values(searchData).filter(value => value && value !== '').length;
+    const filterFields = ['sort', 'protocol', 'protocolType', 'severity', 'difficulty', 'tags'];
+    return filterFields.filter(field => searchData[field] && searchData[field] !== '').length;
   };
 
   // Fetch search suggestions
@@ -106,6 +161,7 @@ export default function Header({
     fetchSuggestions(searchData.searchTerm);
   }, [searchData.searchTerm, fetchSuggestions]);
 
+  // Handle outside clicks and scroll
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -115,11 +171,30 @@ export default function Header({
         setShowSuggestions(false);
         setActiveSuggestion(-1);
       }
+      // Check if the click is outside the filter panel AND not on the filter button
+      if (filterPanelRef.current && !filterPanelRef.current.contains(event.target)) {
+        // Find the filter button element
+        const filterButton = document.querySelector('[data-filter-button]');
+        if (filterButton && !filterButton.contains(event.target)) {
+          setShowFilterPanel(false);
+        }
+      }
+    };
+
+    const handleScroll = () => {
+      setShowFilterPanel(false);
+      setShowSuggestions(false);
+      setIsDropdownOpen(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -259,59 +334,25 @@ export default function Header({
               {/* Filter Controls - Show when showFilters is true */}
               {showFilters && (
                 <>
-                  {/* Desktop: Full filter controls */}
+                  {/* Desktop: Only Filters button and View Mode */}
                   <div className="hidden md:flex items-center gap-3">
-                    {/* Protocol Filter */}
-                    <select
-                      id="protocol"
-                      value={searchData.protocol || ''}
-                      onChange={handleFilterChange}
-                      className="px-3 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-sm focus:ring-2 focus:ring-zinc-600 flex-shrink-0 min-w-[120px]"
-                    >
-                      <option value="">All Protocols</option>
-                      {filterStats.protocols?.map(protocol => (
-                        <option key={protocol} value={protocol}>{protocol}</option>
-                      ))}
-                    </select>
-
-                    {/* Severity Filter */}
-                    <select
-                      id="severity"
-                      value={searchData.severity || ''}
-                      onChange={handleFilterChange}
-                      className="px-3 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-sm focus:ring-2 focus:ring-zinc-600 flex-shrink-0 min-w-[110px]"
-                    >
-                      <option value="">All Severity</option>
-                      <option value="critical">Critical</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                      <option value="informational">Info</option>
-                    </select>
-
-                    {/* Sort Filter */}
-                    <select
-                      id="sort"
-                      value={searchData.sort || ''}
-                      onChange={handleFilterChange}
-                      className="px-3 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-sm focus:ring-2 focus:ring-zinc-600 flex-shrink-0 min-w-[100px]"
-                    >
-                      <option value="">Default</option>
-                      <option value="desc">Latest</option>
-                      <option value="asc">Oldest</option>
-                      <option value="severity">Severity</option>
-                    </select>
-
-                    {/* More Filters Button */}
+                    {/* Filters Button */}
                     <button
-                      onClick={() => setShowFilterPanel(!showFilterPanel)}
-                      className="relative px-3 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-2 flex-shrink-0"
+                      data-filter-button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowFilterPanel(!showFilterPanel);
+                      }}
+                      className={`relative p-2.5 border border-zinc-700 rounded-lg transition-colors flex items-center justify-center flex-shrink-0 ${
+                        showFilterPanel 
+                          ? 'bg-zinc-700 text-white' 
+                          : 'bg-zinc-900 hover:bg-zinc-800'
+                      }`}
                     >
                       <FiFilter className="w-4 h-4" />
-                      <span className="hidden lg:inline text-sm">More</span>
-                      {getActiveFiltersCount() > 3 && (
-                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                          +
+                      {getActiveFiltersCount() > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-zinc-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {getActiveFiltersCount()}
                         </span>
                       )}
                     </button>
@@ -347,7 +388,7 @@ export default function Header({
                   >
                     <FiFilter className="w-4 h-4" />
                     {getActiveFiltersCount() > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 bg-zinc-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                         {getActiveFiltersCount()}
                       </span>
                     )}
@@ -360,12 +401,9 @@ export default function Header({
           {/* Desktop Navigation */}
           {currentUser && (
             <nav className={`hidden lg:flex items-center space-x-1 ${showSearch ? 'flex-shrink-0' : ''}`}>
-              {navigationItems.map(({ path: itemPath, label, icon: Icon }) => (
+              {navigationItems.map(({ path: itemPath, icon: Icon }) => (
                 <NavLink key={itemPath} to={itemPath}>
-                  <div className="flex items-center space-x-2">
-                    <Icon className="w-4 h-4" />
-                    <span>{label}</span>
-                  </div>
+                  <Icon className="w-5 h-5" />
                 </NavLink>
               ))}
             </nav>
@@ -380,10 +418,9 @@ export default function Header({
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="inline-flex items-center px-4 py-2 bg-zinc-100 hover:bg-white text-black font-medium rounded-lg transition-all duration-200 space-x-2"
+                    className="p-2.5 bg-zinc-100 hover:bg-white text-black font-medium rounded-lg transition-all duration-200 flex items-center justify-center"
                   >
-                    <FiPlus className="w-4 h-4" />
-                    <span>New Post</span>
+                    <FiPlus className="w-5 h-5" />
                   </motion.button>
                 </Link>
 
@@ -501,6 +538,162 @@ export default function Header({
         </div>
       </div>
 
+      {/* Desktop Filter Panel - Only shows when "Filters" is clicked */}
+      <AnimatePresence>
+        {currentUser && showFilters && showFilterPanel && (
+          <motion.div
+            ref={filterPanelRef}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-16 left-0 right-0 z-40"
+          >
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+              <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-700 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Protocol</label>
+                    <select
+                      id="protocol"
+                      value={searchData.protocol || ''}
+                      onChange={handleFilterChange}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-zinc-500 focus:border-zinc-500"
+                    >
+                      <option value="">All Protocols</option>
+                      {filterStats.protocols?.map(protocol => (
+                        <option key={protocol} value={protocol}>{protocol}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Severity</label>
+                    <select
+                      id="severity"
+                      value={searchData.severity || ''}
+                      onChange={handleFilterChange}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-zinc-500 focus:border-zinc-500"
+                    >
+                      <option value="">All Severity</option>
+                      <option value="critical">Critical</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                      <option value="informational">Informational</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Sort</label>
+                    <select
+                      id="sort"
+                      value={searchData.sort || ''}
+                      onChange={handleFilterChange}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-zinc-500 focus:border-zinc-500"
+                    >
+                      <option value="">Default</option>
+                      <option value="desc">Latest</option>
+                      <option value="asc">Oldest</option>
+                      <option value="severity">By Severity</option>
+                    </select>
+                  </div>
+
+                  {/* Second Row - Additional Filters */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Protocol Type</label>
+                    <select
+                      id="protocolType"
+                      value={searchData.protocolType || ''}
+                      onChange={handleFilterChange}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-zinc-500 focus:border-zinc-500"
+                    >
+                      <option value="">All Types</option>
+                      <option value="ZKEVM">ZKEVM</option>
+                      <option value="ZKTRIE">ZKTRIE</option>
+                      <option value="L2GETH">L2GETH</option>
+                      <option value="OTHER">OTHER</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Difficulty</label>
+                    <select
+                      id="difficulty"
+                      value={searchData.difficulty || ''}
+                      onChange={handleFilterChange}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-zinc-500 focus:border-zinc-500"
+                    >
+                      <option value="">All Difficulties</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
+                    <input
+                      type="text"
+                      id="tags"
+                      placeholder="Comma-separated tags"
+                      value={searchData.tags || ''}
+                      onChange={handleFilterChange}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-zinc-500 focus:border-zinc-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-6 pt-4 border-t border-zinc-800 flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-400">
+                      {filterStats.totalPosts || 0} results found
+                    </span>
+                    {getActiveFiltersCount() > 0 && (
+                      <span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded">
+                        {getActiveFiltersCount()} active filters
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={shareFilters}
+                      className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-700 flex items-center gap-2"
+                    >
+                      {showShareSuccess ? (
+                        <>
+                          <FiCheck className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiShare2 className="w-4 h-4" />
+                          Share Filters
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={clearFilters}
+                      className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-700"
+                    >
+                      Clear Filters
+                    </button>
+                    <button
+                      onClick={applyFilters}
+                      className="px-4 py-2 bg-white hover:bg-gray-100 text-black text-sm font-medium rounded-lg transition-colors"
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -535,7 +728,7 @@ export default function Header({
                         <FiFilter className="w-4 h-4" />
                         Filters
                         {getActiveFiltersCount() > 0 && (
-                          <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                          <span className="bg-zinc-600 text-white text-xs rounded-full px-2 py-0.5">
                             {getActiveFiltersCount()}
                           </span>
                         )}
@@ -662,19 +855,27 @@ export default function Header({
                         </div>
                       </div>
 
-                      {/* Mobile Results Count and Clear Filters */}
-                      <div className="flex justify-between items-center pt-2 border-t border-zinc-800">
+                      {/* Mobile Action Buttons */}
+                      <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
                         <span className="text-xs text-gray-400">
                           {filterStats.totalPosts || 0} results
                         </span>
-                        {getActiveFiltersCount() > 0 && (
+                        <div className="flex gap-2">
+                          {getActiveFiltersCount() > 0 && (
+                            <button
+                              onClick={clearFilters}
+                              className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1"
+                            >
+                              Clear
+                            </button>
+                          )}
                           <button
-                            onClick={clearFilters}
-                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="text-xs bg-zinc-600 hover:bg-zinc-700 text-white px-3 py-1 rounded transition-colors"
                           >
-                            Clear filters
+                            Apply
                           </button>
-                        )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -749,86 +950,6 @@ export default function Header({
                   </Link>
                 </div>
               )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Additional Filters Panel - Only shows when "More" is clicked */}
-      <AnimatePresence>
-        {currentUser && showFilters && showFilterPanel && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-16 left-0 right-0 z-40 bg-black/95 backdrop-blur-sm border-b border-zinc-800"
-          >
-            <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
-              <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Protocol Type */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Protocol Type</label>
-                    <select
-                      id="protocolType"
-                      value={searchData.protocolType || ''}
-                      onChange={handleFilterChange}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-600"
-                    >
-                      <option value="">All Types</option>
-                      <option value="ZKEVM">ZKEVM</option>
-                      <option value="ZKTRIE">ZKTRIE</option>
-                      <option value="L2GETH">L2GETH</option>
-                      <option value="OTHER">OTHER</option>
-                    </select>
-                  </div>
-
-                  {/* Difficulty */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Difficulty</label>
-                    <select
-                      id="difficulty"
-                      value={searchData.difficulty || ''}
-                      onChange={handleFilterChange}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-600"
-                    >
-                      <option value="">All</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </select>
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
-                    <input
-                      type="text"
-                      id="tags"
-                      placeholder="Comma-separated tags"
-                      value={searchData.tags || ''}
-                      onChange={handleFilterChange}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-600"
-                    />
-                  </div>
-                </div>
-
-                {/* Clear Filters Button */}
-                {getActiveFiltersCount() > 0 && (
-                  <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
-                    <button
-                      onClick={clearFilters}
-                      className="text-sm text-red-400 hover:text-red-300 transition-colors"
-                    >
-                      Clear all filters
-                    </button>
-                    <span className="text-xs text-gray-500">
-                      {getActiveFiltersCount()} active filters
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
           </motion.div>
         )}
