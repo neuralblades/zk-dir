@@ -306,7 +306,7 @@ export default function Home() {
     const urlParams = new URLSearchParams(location.search);
     
     const urlFilters = {
-      searchTerm: sidebarData.searchTerm, // Keep existing search term
+      searchTerm: '', // Reset search term from URL params
       sort: urlParams.get('sort') || '',
       protocol: urlParams.get('protocol') || '',
       protocolType: urlParams.get('protocolType') || '',
@@ -315,15 +315,20 @@ export default function Home() {
       tags: urlParams.get('tags') || '',
     };
 
-    // Check if there are differences (excluding searchTerm)
-    const hasChanges = Object.keys(urlFilters).some(
-      key => key !== 'searchTerm' && urlFilters[key] !== sidebarData[key]
-    );
+    // Update sidebar data with URL parameters
+    setSidebarData(prevData => {
+      // Check if there are actual changes to avoid unnecessary updates
+      const hasChanges = Object.keys(urlFilters).some(
+        key => key !== 'searchTerm' && urlFilters[key] !== prevData[key]
+      );
 
-    if (hasChanges) {
-      setSidebarData(urlFilters);
-      setHasAutoSelected(false);
-    }
+      if (hasChanges) {
+        setHasAutoSelected(false);
+        return { ...prevData, ...urlFilters };
+      }
+      
+      return prevData;
+    });
 
     // Always fetch posts with current URL params on mount or URL change
     fetchPosts(urlParams.toString());
@@ -548,7 +553,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Post Content - Rest of your existing JSX remains the same */}
+                    {/* Post Content */}
                     <div className="p-8">
                       {/* Meta Information */}
                       <div className="flex flex-wrap gap-6 text-sm text-zinc-400 mb-10 pb-6 border-b border-zinc-800/50">
@@ -699,9 +704,9 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Impact and Recommendation - Stacked for Detail View */}
+                      {/* Impact and Recommendation - Side by Side Grid */}
                       {(selectedPost.impact || selectedPost.recommendation) && (
-                        <div className="mb-10 grid gap-8 lg:grid-cols-2">
+                        <div className="mb-10 grid gap-6 lg:grid-cols-2">
                           {selectedPost.impact && (
                             <div className="relative">
                               <div className="absolute -left-2 top-0 w-1 h-full bg-red-500 rounded-full"></div>
